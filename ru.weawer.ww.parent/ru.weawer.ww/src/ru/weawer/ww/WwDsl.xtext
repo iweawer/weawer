@@ -1,0 +1,140 @@
+grammar ru.weawer.ww.WwDsl hidden(WS, SL_COMMENT, ML_COMMENT)
+
+generate wwDsl "http://www.weawer.ru/ww/WwDsl"
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+Model:
+	package+=Package*;
+	
+Package:
+	'package' name=QualifiedName '{'
+		element+=Element*
+	'}'
+;
+
+Element:
+	Import|EnumType|Tag|TaggableElement|SettingsContainer
+;
+
+TaggableElement:
+	Field|Struct
+;
+
+Import:
+	'import' importedNamespace=QualifiedNameWithWildcard
+;
+
+Field:
+	'field' type=Type name=ID (('tags' tags+=TagWithValue+)? & ('label' label=STRING)? & ('default' default=ValueExpression)?) (comment=COMMENT)?
+;
+
+enum SimpleType:
+	boolean|byte|char|short|int|long|float|double|string|date|time|datetime|timestamp|guid
+;
+
+EnumType:
+	'enum' name=QualifiedName (arrayIndex?='ArrayIndex')? '{'
+		(comment=COMMENT)?
+		fields+=EnumField+
+	'}'
+;
+
+EnumField:
+	name=ID ('(' val=INT ')')? (comment=COMMENT)?
+;
+
+Tag:
+	'tag' name=ID (hasValue?='hasValue')? (comment=COMMENT)?
+;
+
+TagWithValue:
+	tag=[Tag | QualifiedName]('(' value=STRING ')')?
+;
+
+Map:
+	'map<' key=SimpleTypeAndEnum ',' value=Type '>'
+;
+
+List:
+	'list<' elem=Type '>'
+;
+
+SimpleTypeAndEnum:
+	(s=SimpleType)|(e=[EnumType | QualifiedName])
+;
+
+Type:
+	SimpleTypeAndEnum|Map|List|Struct
+;
+
+Struct:
+	type=('struct'|'setting') name=ID ('[' tags+=TagWithValue+ ']')? '{'
+		(comment=COMMENT)?
+		((single?='single')|('keys' keys+=[Field | QualifiedName]+))
+		fields+=StructField*
+		fieldsExpr+=FilterExpression*
+	'}'
+;
+
+StructField:
+	('field' 'ref' '=' ref=[Field | QualifiedName])|(field=Field)
+;
+
+FilterExpression:
+	elemType=('fields'|'structs'|'settings') 'from' 'packages' packages+=[Package | QualifiedName]+ ('by tags' tags+=TagWithValue+)?
+;
+
+SettingsContainer:
+	'settings' 'container' name=ID '{'
+		(comment=COMMENT)?
+		fields+=Setting*
+		fieldsExpr+=FilterExpression*
+	'}'
+;
+
+Setting:
+	('setting' 'ref' '=' ref=[Struct | QualifiedName])|(field=Struct)
+;
+
+QualifiedName:
+  ID('.'ID)*
+;
+
+QualifiedNameWithWildcard:
+    QualifiedName '.*'?
+;
+
+SimpleValueExpression:
+	'true'|'false'|INT|DOUBLE|STRING|CHAR|DATE|TIME|DATETIME|UUID|'NaN'|'+Infinity'|'-Infinity'|'Infinity'
+;
+
+ValueExpression:
+	(s=SimpleValueExpression)|e=[EnumField | QualifiedName]
+;
+
+
+
+terminal ID  		: '^'?('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+terminal INT returns ecore::EInt: '-'? ('0'..'9')+;
+terminal DOUBLE returns ecore::EDouble : '-'? ((('0'..'9')+ '.' ('0'..'9')+) | ('.' ('0'..'9')+) | (('0'..'9')+ '.'))(('e' | 'E') ('-'|('+')?) ('0'..'9')+)? ;
+terminal STRING	: 
+			'"' ( '\\' ('b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\') | !('\\'|'"') )* '"';
+			
+terminal CHAR returns ecore::EChar: '\'' (('\\' ('b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\')) | !('\\'|'\'')) '\'';
+
+terminal DATE: ('1'..'9')('0'..'9')('0'..'9')('0'..'9') '-' ('0'..'9')('0'..'9') '-' ('0'..'9')('0'..'9');
+terminal TIME: ('0'..'9')('0'..'9') ':' ('0'..'9')('0'..'9') (':' ('0'..'9')('0'..'9') ('.' ('0'..'9')('0'..'9')('0'..'9')(('0'..'9')('0'..'9')('0'..'9'))?)?)?;
+terminal DATETIME: DATE 'T' TIME;
+
+terminal fragment HEX_DIGIT: '0'..'9'|'a'..'f'|'A'..'F';
+terminal fragment FOUR_HEX_DIGITS: HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT ;
+
+// 16fd2706-8baf-433b-82eb-8c7fada847da;
+terminal UUID : FOUR_HEX_DIGITS FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS FOUR_HEX_DIGITS FOUR_HEX_DIGITS;
+
+terminal COMMENT	: '(*' -> '*)';
+terminal ML_COMMENT	: '/*' -> '*/';
+terminal SL_COMMENT 	: '//' !('\n'|'\r')* ('\r'? '\n')?;
+
+terminal WS			: (' '|'\t'|'\r'|'\n')+;

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<?eclipse version="3.0"?>
+<plugin>
+	<extension point="org.eclipse.emf.ecore.generated_package">
+		<package 
+			uri = "http://www.weawer.ru/ww/WwDsl"
+			class = "ru.weawer.ww.wwDsl.WwDslPackage"
+			genModel = "model/generated/WwDsl.genmodel" />
+	</extension>
+</plugin>

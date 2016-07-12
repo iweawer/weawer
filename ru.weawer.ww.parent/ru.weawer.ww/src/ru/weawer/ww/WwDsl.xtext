@@ -34,7 +34,7 @@ enum SimpleType:
 ;
 
 EnumType:
-	'enum' name=QualifiedName (arrayIndex?='ArrayIndex')? '{'
+	'enum' name=ID (arrayIndex?='ArrayIndex')? '{'
 		(comment=COMMENT)?
 		fields+=EnumField+
 	'}'
@@ -53,19 +53,19 @@ TagWithValue:
 ;
 
 Map:
-	'map<' key=SimpleTypeAndEnum ',' value=Type '>'
+	'map<' key=Type ',' value=Type '>'
 ;
 
 List:
 	'list<' elem=Type '>'
 ;
 
-SimpleTypeAndEnum:
-	(s=SimpleType)|(e=[EnumType | QualifiedName])
+RefType:
+	EnumType|Struct
 ;
 
 Type:
-	SimpleTypeAndEnum|Map|List|Struct
+	(simple=SimpleType)|(ref=[RefType | QualifiedName])|(list=List)|(map=Map)
 ;
 
 Struct:

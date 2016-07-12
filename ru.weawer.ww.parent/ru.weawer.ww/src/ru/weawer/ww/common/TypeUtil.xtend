@@ -3,11 +3,32 @@ package ru.weawer.ww.common
 import ru.weawer.ww.wwDsl.List
 import ru.weawer.ww.wwDsl.Map
 import ru.weawer.ww.wwDsl.SimpleType
-import ru.weawer.ww.wwDsl.SimpleTypeAndEnum
+
 import ru.weawer.ww.wwDsl.Struct
 import ru.weawer.ww.wwDsl.Type
+import ru.weawer.ww.wwDsl.EnumType
 
 public class TypeUtil {
+	
+	def public static boolean isSimple(Type type) {
+		return type.simple != null
+	}
+	
+	def public static boolean isEnum(Type type) {
+		return type.ref != null && type.ref instanceof EnumType
+	}
+	
+	def public static boolean isMap(Type type) {
+		return type.map != null
+	}
+	
+	def public static boolean isList(Type type) {
+		return type.list != null
+	}
+	
+	def public static boolean isStruct(Type type) {
+		return type.ref != null && type.ref instanceof Struct
+	}
 	
 	def public static String toJavaType(SimpleType type) {
 		switch(type.getName) {
@@ -49,20 +70,18 @@ public class TypeUtil {
 	
 	def public static String toJavaObjectType(Type type) {
 		if(type.isJavaSimpleType) {
-			return toJavaObjectType((type as SimpleTypeAndEnum).s);
+			return toJavaObjectType(type.simple);
 		}
 		return toJavaType(type)
 	}
 	
 	def public static String toJavaType(Type type) {
-		if(type instanceof SimpleTypeAndEnum) {
-			if(type.e != null) {
-				return Util.getFullname(type.e)
-			} else {
-				return toJavaType(type.s)
-			}
-		} else if(type instanceof Map) {
-			return "Map<" + toJavaObjectType(type.key) + ", " + toJavaObjectType(type.value) + ">"
+		if(isSimple(type)) {
+			toJavaType(type.simple)
+		} else if(isEnum(type)) {
+			return Util.getFullname(type.ref as EnumType)
+		} else if(isMap(type)) {
+			return "Map<" + toJavaObjectType(type.map.key) + ", " + toJavaObjectType(type.map.value) + ">"
 		} else if(type instanceof List) {
 			return "List<" + toJavaObjectType(type.elem) + ">"
 		} else if(type instanceof Struct) {
@@ -72,12 +91,8 @@ public class TypeUtil {
 	}
 	
 	def public static boolean isJavaSimpleType(Type type) {
-		if(type instanceof SimpleTypeAndEnum) {
-			if(type.e != null) {
-				return false
-			} else {
-				return isJavaSimpleType(type.s)
-			}
+		if(isSimple(type)) {
+			return isJavaSimpleType(type.simple)
 		}
 		return false
 	}
@@ -105,14 +120,12 @@ public class TypeUtil {
 	}
 	
 	def public static String getTypeName(Type type) {
-		if(type instanceof SimpleTypeAndEnum) {
-			if(type.e != null) {
-				return Util.getFullname(type.e)
-			} else {
-				return type.s.getName
-			}
+		if(isSimple(type)) {
+			return type.simple.getName
+		} else if(isEnum(type)) {
+			return Util.getFullname(type.ref as EnumType)
 		} else if(type instanceof Map) {
-			return "map<" + getTypeName(type.key) + ", " + getTypeName(type.value) + ">"
+			return "map<" + getTypeName(type.map.key) + ", " + getTypeName(type.map.value) + ">"
 		} else if(type instanceof List) {
 			return "list<" + toJavaObjectType(type.elem) + ">"
 		} else if(type instanceof Struct) {
@@ -126,39 +139,16 @@ public class TypeUtil {
 	}
 	
 	def private static String javaToJson(Type type, String name, int count) {
-		if(type instanceof SimpleTypeAndEnum) {
-			if(type.e != null) {
-				return '''"\"" + «name».name() + "\""''';
-			} else {
-				return '''"\"" + String.valueOf(«name») + "\""''';
-			}
-		} else if(type instanceof Map) {
-			return '''"{" + «name».entrySet().stream().map(e«count» -> «javaToJson(type.key, "e"+count + ".getKey()", count+1)» + ":" + «javaToJson(type.value, "e"+count+".getValue()", count+1)»).collect(Collectors.joining(",")) + "}"'''
-		} else if(type instanceof List) {
-			return '''"[" + «name».stream().map(e«count» -> «javaToJson(type.elem, "e"+count, count+1)»).collect(Collectors.joining(",")) + "]"'''
-		} else if(type instanceof Struct) {
-			return '''«name».toJson()'''
-		}
-		return null;
-	}
-	
-	def public static String pythonToJson(Type type, String name) {
-		return pythonToJson(type, name, 0);
-	}
-	
-	def private static String pythonToJson(Type type, String name, int count) {
-		if(type instanceof SimpleTypeAndEnum) {
-			if(type.e != null) {
-				return '''"\"" + «name».name() + "\""'''
-			} else {
-				return '''"\"" + str(«name») + "\""'''
-			}
-		} else if(type instanceof Map) {
-			return '''"{" + ", ".join(['"' + str(e«count») + '": "' + str(«name»[e«count»]) + '"' for e«count» in «name».keys()]) + "}"'''
-		} else if(type instanceof List) {
-			return '''"[" + ", ".join([«pythonToJson(type.elem, "e"+count, count+1)» for e«count» in «name»]) + "]"'''
-		} else if(type instanceof Struct) {
-			return '''«name».toJson()'''
+		if(isSimple(type)) {
+			return '''"\"" + String.valueOf(«name») + "\""''';
+		} else if(isEnum(type)) {
+			return '''"\"" + «name».name() + "\""''';
+		} else if(isMap(type)) {
+			return '''"{" + «name».entrySet().stream().map(e«count» -> «javaToJson(type.map.key, "e"+count + ".getKey()", count+1)» + ":" + «javaToJson(type.map.value, "e"+count+".getValue()", count+1)»).collect(Collectors.joining(",")) + "}"'''
+		} else if(isList(type)) {
+			return '''"[" + «name».stream().map(e«count» -> «javaToJson(type.list.elem, "e"+count, count+1)»).collect(Collectors.joining(",")) + "]"'''
+		} else if(isStruct(type)) {
+			return '''JSONStructSerializer.toJson(«name»)'''
 		}
 		return null;
 	}

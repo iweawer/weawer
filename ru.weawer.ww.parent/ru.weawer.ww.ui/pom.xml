@@ -18,4 +18,11 @@
 		</plugins>
 	</build>
 
+	<dependencies>
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+			<version>4.1.0</version>
+		</dependency>
+	</dependencies>
 </project>

@@ -11,5 +11,5 @@ package ru.weawer.ww.scoping
  * on how and when to use it.
  */
 class WwDslScopeProvider extends AbstractWwDslScopeProvider {
-
+ 
 }

@@ -23,11 +23,12 @@ import com.google.inject.Injector;
 import com.google.inject.Provider;
 
 import ru.weawer.ww.generator.EnumsGenerator;
+import ru.weawer.ww.generator.JsonStructSerializer;
 import ru.weawer.ww.generator.WwDslGenerator;
 import ru.weawer.ww.generator.settings.JavaClassesGenerator;
 
 /**
- * @author tkacigo
+ * @author iweawer
  *
  */
 public class Main {
@@ -60,6 +61,7 @@ public class Main {
 		WwDslGenerator dslGenerator = injector.getInstance(WwDslGenerator.class);
 		dslGenerator.registerGenerator(injector.getInstance(EnumsGenerator.class));
 		dslGenerator.registerGenerator(injector.getInstance(JavaClassesGenerator.class));
+		dslGenerator.registerGenerator(injector.getInstance(JsonStructSerializer.class));
 		
 		String generatorProp = System.getProperty(GENERATORS_PROPERTY);
 		if(generatorProp != null && !generatorProp.isEmpty()) {
@@ -74,7 +76,7 @@ public class Main {
 				}
 			}
 		}
-		List<URL> urls = new ClasspathFileFinder().findFilesInClassPath(".*sti");
+		List<URL> urls = new ClasspathFileFinder().findFilesInClassPath(".*ww");
 		System.out.println("URLs: " + urls);
 //		System.out.println("Path to crsdsl files: " + args[0]);
 //		System.out.println("List of files: " + Arrays.asList(new File(args[0]).list()));

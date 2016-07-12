@@ -4,21 +4,22 @@ import com.google.common.collect.Lists
 import com.google.common.collect.Sets
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import ru.weawer.ww.wwDsl.Element
 import ru.weawer.ww.wwDsl.EnumType
-import ru.weawer.ww.wwDsl.Struct
-import ru.weawer.ww.wwDsl.SettingsContainer
-import ru.weawer.ww.wwDsl.TaggableElement
 import ru.weawer.ww.wwDsl.Field
+import ru.weawer.ww.wwDsl.Package
+import ru.weawer.ww.wwDsl.SettingsContainer
+import ru.weawer.ww.wwDsl.SimpleType
+import ru.weawer.ww.wwDsl.Struct
 import ru.weawer.ww.wwDsl.StructField
 import ru.weawer.ww.wwDsl.Tag
-import ru.weawer.ww.wwDsl.SimpleTypeAndEnum
-import ru.weawer.ww.wwDsl.SimpleType
-import ru.weawer.ww.wwDsl.Element
 import ru.weawer.ww.wwDsl.TagWithValue
+import ru.weawer.ww.wwDsl.TaggableElement
 
 public class Util {
 	
 	def public static String getPackage(EObject e) {
+		println("getPackage: " + e.toString + ", eContainer: " + e.eContainer)
 		if(e instanceof Package) {
 			return e.name;
 		}
@@ -125,18 +126,19 @@ public class Util {
 	}
 	
 	def public static boolean isEnum(Field f) {
-		return (f instanceof SimpleTypeAndEnum) && (f as SimpleTypeAndEnum).e != null
+		return f.type.ref != null && (f.type.ref instanceof EnumType)
 	}
 	
 	def public static boolean isSimpleType(Field f) {
-		return (f instanceof SimpleTypeAndEnum) && (f as SimpleTypeAndEnum).s != null
+		return f.type.simple != null
 	}
 	
 	def public static SimpleType getSimpleType(Field f) {
-		return if (f instanceof SimpleTypeAndEnum) (f as SimpleTypeAndEnum).s else null 
+		return if (f.type.simple != null) f.type.simple else null 
 	}
 	
-	def public static boolean isInPackages(Element element, java.util.List<String> packages) {
+	def public static boolean isInPackages(Element element, List<String> packages) {
+		println("isInPackages: " + element.toString + ", eContainer: " + element.eContainer)
 		val elemPack = getPackage(element);
 		for(String pack : packages) {
 			if(elemPack.startsWith(pack)) return true;

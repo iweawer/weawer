@@ -10,13 +10,15 @@ import org.eclipse.xtext.generator.IGeneratorContext
 import java.util.List
 import com.google.common.collect.Lists
 import org.eclipse.emf.ecore.resource.ResourceSet
+import com.google.inject.Singleton
 
 /**
  * Generates code from your model files on save.
  * 
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#code-generation
  */
-class WwDslGenerator extends AbstractGenerator {
+@Singleton
+public class WwDslGenerator extends AbstractGenerator {
 
 	private final List<Object> generators = Lists::newArrayList();
 

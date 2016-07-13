@@ -26,7 +26,7 @@ Import:
 ;
 
 Field:
-	'field' type=Type name=ID (('tags' tags+=TagWithValue+)? & ('label' label=STRING)? & ('default' default=ValueExpression)?) (comment=COMMENT)?
+	'field' type=Type name=ID ((nullable?='nullable')? & (mutable?='mutable')? & ('tags' tags+=TagWithValue+)? & ('label' label=STRING)? & ('default' default=ValueExpression)?) (comment=COMMENT)?
 ;
 
 enum SimpleType:
@@ -71,7 +71,8 @@ Type:
 Struct:
 	type=('struct'|'setting') name=ID ('[' tags+=TagWithValue+ ']')? '{'
 		(comment=COMMENT)?
-		((single?='single')|('keys' keys+=[Field | QualifiedName]+))
+		('keys' keys+=[Field | QualifiedName]+)?
+		(mutable?='mutable')?
 		fields+=StructField*
 		fieldsExpr+=FilterExpression*
 	'}'
@@ -82,7 +83,7 @@ StructField:
 ;
 
 FilterExpression:
-	elemType=('fields'|'structs'|'settings') 'from' 'packages' packages+=[Package | QualifiedName]+ ('by tags' tags+=TagWithValue+)?
+	elemType=('fields'|'structs'|'settings') 'from' 'packages' packages+=[Package | QualifiedName]+ ('byTags' tags+=TagWithValue+)?
 ;
 
 SettingsContainer:

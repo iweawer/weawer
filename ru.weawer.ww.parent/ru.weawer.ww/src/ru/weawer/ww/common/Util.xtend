@@ -19,7 +19,6 @@ import ru.weawer.ww.wwDsl.TaggableElement
 public class Util {
 	
 	def public static String getPackage(EObject e) {
-		println("getPackage: " + e.toString + ", eContainer: " + e.eContainer)
 		if(e instanceof Package) {
 			return e.name;
 		}
@@ -121,7 +120,7 @@ public class Util {
 	}
 	
 	def public static boolean isKey(Field f, Struct s) {
-		if(s.single) return false;
+		if(s.keys == null) return false;
 		return s.keys.map[getFullname].contains(f.fullname)
 	}
 	
@@ -138,7 +137,6 @@ public class Util {
 	}
 	
 	def public static boolean isInPackages(Element element, List<String> packages) {
-		println("isInPackages: " + element.toString + ", eContainer: " + element.eContainer)
 		val elemPack = getPackage(element);
 		for(String pack : packages) {
 			if(elemPack.startsWith(pack)) return true;

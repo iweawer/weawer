@@ -11,7 +11,7 @@ import ru.weawer.ww.wwDsl.EnumType
 public class TypeUtil {
 	
 	def public static boolean isSimple(Type type) {
-		return type.simple != null
+		return type.simple != null && type.ref == null && type.map == null && type.list == null
 	}
 	
 	def public static boolean isEnum(Type type) {
@@ -31,40 +31,40 @@ public class TypeUtil {
 	}
 	
 	def public static String toJavaType(SimpleType type) {
-		switch(type.getName) {
-			case "boolean": return "boolean"
-			case "byte": return "byte"
-			case "char": return "char"
-			case "short": return "short"
-			case "int": return "int"
-			case "long": return "long"
-			case "float": return "float"
-			case "double": return "double"
-			case "string": return "String"
-			case "date": return "LocalDate"
-			case "time": return "LocalTime"
-			case "datetime": return "LocalDateTime"
-			case "timestamp": return "long"
-			case "guid": return "java.util.UUID"
+		switch(type) {
+			case SimpleType.BOOLEAN: return "boolean"
+			case SimpleType.BYTE: return "byte"
+			case SimpleType.CHAR: return "char"
+			case SimpleType.SHORT: return "short"
+			case SimpleType.INT: return "int"
+			case SimpleType.LONG: return "long"
+			case SimpleType.FLOAT: return "float"
+			case SimpleType.DOUBLE: return "double"
+			case SimpleType.STRING: return "String"
+			case SimpleType.DATE: return "LocalDate"
+			case SimpleType.TIME: return "LocalTime"
+			case SimpleType.DATETIME: return "LocalDateTime"
+			case SimpleType.TIMESTAMP: return "long"
+			case SimpleType.GUID: return "java.util.UUID"
 		}
 	}
 	
 	def public static String toJavaObjectType(SimpleType type) {
-		switch(type.getName) {
-			case "boolean": return "Boolean"
-			case "byte": return "Byte"
-			case "char": return "Character"
-			case "short": return "Short"
-			case "int": return "Integer"
-			case "long": return "Long"
-			case "float": return "Float"
-			case "double": return "Double"
-			case "string": return "String"
-			case "date": return "LocalDate"
-			case "time": return "LocalTime"
-			case "datetime": return "LocalDateTime"
-			case "timestamp": return "Long"
-			case "guid": return "java.util.UUID"
+		switch(type) {
+			case SimpleType.BOOLEAN: return "Boolean"
+			case SimpleType.BYTE: return "Byte"
+			case SimpleType.CHAR: return "Character"
+			case SimpleType.SHORT: return "Short"
+			case SimpleType.INT: return "Integer"
+			case SimpleType.LONG: return "Long"
+			case SimpleType.FLOAT: return "Float"
+			case SimpleType.DOUBLE: return "Double"
+			case SimpleType.STRING: return "String"
+			case SimpleType.DATE: return "LocalDate"
+			case SimpleType.TIME: return "LocalTime"
+			case SimpleType.DATETIME: return "LocalDateTime"
+			case SimpleType.TIMESTAMP: return "Long"
+			case SimpleType.GUID: return "java.util.UUID"
 		}
 	}
 	
@@ -77,15 +77,15 @@ public class TypeUtil {
 	
 	def public static String toJavaType(Type type) {
 		if(isSimple(type)) {
-			toJavaType(type.simple)
+			return toJavaType(type.simple)
 		} else if(isEnum(type)) {
 			return Util.getFullname(type.ref as EnumType)
 		} else if(isMap(type)) {
 			return "Map<" + toJavaObjectType(type.map.key) + ", " + toJavaObjectType(type.map.value) + ">"
-		} else if(type instanceof List) {
-			return "List<" + toJavaObjectType(type.elem) + ">"
-		} else if(type instanceof Struct) {
-			return Util.getFullname(type)
+		} else if(isList(type)) {
+			return "List<" + toJavaObjectType(type.list.elem) + ">"
+		} else if(isStruct(type)) {
+			return Util.getFullname(type.ref as Struct)
 		}
 		return null;
 	}
@@ -124,12 +124,12 @@ public class TypeUtil {
 			return type.simple.getName
 		} else if(isEnum(type)) {
 			return Util.getFullname(type.ref as EnumType)
-		} else if(type instanceof Map) {
+		} else if(isMap(type)) {
 			return "map<" + getTypeName(type.map.key) + ", " + getTypeName(type.map.value) + ">"
-		} else if(type instanceof List) {
-			return "list<" + toJavaObjectType(type.elem) + ">"
-		} else if(type instanceof Struct) {
-			return Util.getFullname(type)
+		} else if(isList(type)) {
+			return "list<" + toJavaObjectType(type.list.elem) + ">"
+		} else if(isStruct(type)) {
+			return Util.getFullname(type.ref as Struct)
 		}
 		return null;
 	}
@@ -151,5 +151,16 @@ public class TypeUtil {
 			return '''JSONStructSerializer.toJson(«name»)'''
 		}
 		return null;
+	}
+	
+	def public static print(Type t) {
+		println("Type: " + t)
+		println("TypeName: " + t.typeName)
+		println("isSimple: " + isSimple(t))
+		println("isEnum: " + isEnum(t))
+		println("isMap: " + isMap(t))
+		println("isList: " + isList(t))
+		println("isStruct: " + isStruct(t))
+		println("javaObjectType: " + toJavaObjectType(t))		
 	}
 }

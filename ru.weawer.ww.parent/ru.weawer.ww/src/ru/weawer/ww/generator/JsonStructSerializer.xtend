@@ -34,26 +34,37 @@ public class JsonStructSerializer {
 		import org.apache.logging.log4j.LogManager;
 		import org.apache.logging.log4j.Logger;
 		
-		public class JSONSettingsSerializer() {
+		public class JSONStructSerializer {
 			
 			private static final Logger logger = LogManager.getLogger();
 			
 			public static <T> T fromJson(String json, Class<T> clazz) {
 				Preconditions.checkArgument(json != null && !json.isEmpty(), "JSON is empty. Cannot deserialize from it");
-				Serializer<T> serializer = serializers.get(clazz);
+				Serializer<T> serializer = (Serializer<T>) serializers.get(clazz);
 				if(serializer == null) {
 					logger.error("Serializer for {} not found", clazz.getName());
 					return null;
 				} else {
-					return serializer.fromJson(json);
+					return serializer.fromJsonObj((JSONObject) JSONValue.parse(json));
+				}
+			}
+			
+			public static <T> T fromJsonObj(JSONObject json, Class<T> clazz) {
+				Preconditions.checkArgument(json != null && !json.isEmpty(), "JSON is empty. Cannot deserialize from it");
+				Serializer<T> serializer = (Serializer<T>) serializers.get(clazz);
+				if(serializer == null) {
+					logger.error("Serializer for {} not found", clazz.getName());
+					return null;
+				} else {
+					return serializer.fromJsonObj(json);
 				}
 			}
 			
 			public static <T> String toJson(T struct) {
-				Preconditions.checkArgument(setting != null, "Struct is null. Cannot serialize to JSON");
-				Serializer<T> serializer = serializers.get(clazz);
+				Preconditions.checkArgument(struct != null, "Struct is null. Cannot serialize to JSON");
+				Serializer<T> serializer = (Serializer<T>) serializers.get(struct.getClass());
 				if(serializer == null) {
-					logger.error("Serializer for {} not found", clazz.getName());
+					logger.error("Serializer for {} not found", struct.getClass().getName());
 					return null;
 				} else {
 					return serializer.toJson(struct);
@@ -61,8 +72,8 @@ public class JsonStructSerializer {
 			}
 			
 			private interface Serializer<T> {
-				public String toJson(T setting);
-				public T fromJson(String json);
+				public String toJson(T struct);
+				public T fromJsonObj(JSONObject json);
 			}
 			
 			private static final Map<Class<?>, Serializer<?>> serializers = Maps.newHashMap();
@@ -73,43 +84,42 @@ public class JsonStructSerializer {
 					.filter([isInPackages(packages)])
 					.toIterable»
 					serializers.put(«struct.fullname».class, new Serializer<«struct.fullname»>() {
+						
+						@Override
 						public String toJson(«struct.fullname» struct) {
 							return "{" +
-								"\"name\": \"«struct.fullname»\""
+								"\"structname\": \"«struct.fullname»\""
 								«FOR field : struct.structFields»
 									«IF field.isNullable»
-									 	+ («field.name» != null ? ", \"«field.name»\":" + «javaToJson(field.type, field.name + "()")» : "")
+									 	+ («field.name» != null ? ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()")» : "")
 									«ELSE»
-										+ ", \"«field.name»\":" + «javaToJson(field.type, field.name + "()")»
+										+ ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()")»
 									«ENDIF»
 								«ENDFOR»
 							+ "}";
 						}
-						
-						public «struct.fullname» fromJson(String json) {
-							return fromJsonObj(JSONValue.parse(json));
-						}
-						
-						private static «struct.name» fromJsonObj(Object obj) {
-							«struct.name».Builder «struct.name»Builder = «struct.name».builder();
+
+						@Override
+						public «struct.fullname» fromJsonObj(JSONObject obj) {
+							«struct.fullname».Builder builder = «struct.fullname».builder();
 							Object o = null;
 							«FOR field : struct.structFields»
 								o = ((JSONObject) obj).get("«field.name»");
 								«IF isStruct(field.type)»
-									«struct.name»Builder.«field.name»(«(field.type.ref as Struct).name».fromJsonObj(o));
+									builder.«field.name»(JSONStructSerializer.fromJsonObj((JSONObject) o, «(field.type.ref as Struct).fullname».class));
 								«ELSEIF isMap(field.type) || isList(field.type)»
-									«struct.name»Builder.«field.name»(«typeNameToFunc(field.type)»fromJsonObj(o));
+									builder.«field.name»(«typeNameToFunc(field.type)»fromJsonObj(o));
 								«ELSEIF isSimple(field.type)»
 									if(o != null && o instanceof String) { 
-										«struct.name»Builder.«field.name»(«restoreSimple(field.type.simple, "(String) o")»);
+										builder.«field.name»(«restoreSimple(field.type.simple, "(String) o")»);
 									}
 								«ELSEIF isEnum(field.type)»
 									if(o != null && o instanceof String) { 
-										«struct.name»Builder.«field.name»(«restoreEnum(field.type.ref as EnumType, "(String) o")»);
+										builder.«field.name»(«restoreEnum(field.type.ref as EnumType, "(String) o")»);
 									}
 								«ENDIF»
 							«ENDFOR»
-							return «struct.name»Builder.build();
+							return builder.build();
 						}
 					});
 					
@@ -261,21 +271,22 @@ public class JsonStructSerializer {
 			if(obj instanceof JSONObject) {
 				JSONObject jo = (JSONObject) obj;
 				for(Object e : jo.keySet()) {
-					map.put((«map.map.key.toJavaObjectType») 
+					map.put((«map.map.key.toJavaObjectType»)
 					«IF isStruct(map.map.key)»
-						«(map.map.key.ref as Struct).name».fromJsonObj(e)
+						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.key.ref as Struct).fullname».class)
 					«ELSEIF isMap(map.map.key) || isList(map.map.key)»
 						«typeNameToFunc(map.map.key)»fromJsonObj(e)
 					«ELSEIF isSimple(map.map.key)»
 						«restoreSimple(map.map.key.simple, "(String) e")»
 					«ELSEIF isEnum(map.map.key)»
 						«restoreEnum(map.map.key.ref as EnumType, "(String) e")»
-					«ENDIF»,
+					«ENDIF»
+					,
 					(«map.map.value.toJavaObjectType») 
 					«IF isStruct(map.map.value)»
-						«(map.map.value as Struct).name».fromJsonObj((String) jo.get(e))
+						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.value.ref as Struct).fullname».class)
 					«ELSEIF isMap(map.map.value) || isList(map.map.value)»
-						«typeNameToFunc(map.map.value)»fromJsonObj((String) jo.get(e))
+						«typeNameToFunc(map.map.value)»fromJsonObj(jo.get(e))
 					«ELSEIF isSimple(map.map.value)»
 						«restoreSimple(map.map.value.simple, "(String) jo.get(e)")»
 					«ELSEIF isEnum(map.map.value)»

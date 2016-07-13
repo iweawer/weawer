@@ -25,15 +25,14 @@ public class JavaClassesGenerator {
 	@Generate("java")
 	def public void writeSettingClasses(java.util.List<String> packages, ResourceSet resource, IFileSystemAccess2 fsa) {
 
-		for(setting : resource.allContents
+		for(struct : resource.allContents
 			.filter(typeof(Struct))
 			.filter([isInPackages(packages)])
-			.filter([type == 'setting'])
 			.toIterable
 		) {
 			val output = '''
-			«headers.getJavaHeader(setting.eResource.URI.lastSegment.toString)»
-			package «setting.package»;
+			«headers.getJavaHeader(struct.eResource.URI.lastSegment.toString)»
+			package «struct.package»; 
 			
 			import java.util.*;
 			import java.util.stream.*;
@@ -43,80 +42,87 @@ public class JavaClassesGenerator {
 			import com.google.common.collect.*;
 			import org.apache.logging.log4j.LogManager;
 			import org.apache.logging.log4j.Logger;
-			import ru.weawer.ww.settings.Setting;
-			import ru.weawer.ww.settings.SettingField;
-			
-			«IF setting.comment != null»
-			// «setting.comment»
+			import ru.weawer.ww.JSONStructSerializer;
+			«IF struct.type == "setting"»
+				import ru.weawer.ww.settings.Setting;
+				import ru.weawer.ww.settings.SettingField;
 			«ENDIF»
-			public class «setting.name»	implements Setting {
+			«IF struct.comment != null»
+			// «struct.comment»
+			«ENDIF»
+			public class «struct.name»	implements Setting {
 				
 				private static final Logger logger = LogManager.getLogger();
 				
 				public static enum Field {
-					«setting.structFields.map[name].join(",\n")»
+					«struct.structFields.map[name].join(",\n")»
 				}
 				
-				private final String sysKey;
-				private long updateTS;
-				
-				public long updateTS() {
-					return updateTS;
-				}
-				
-				public void updateTS(long updateTS) {
-					this.updateTS = updateTS;
-				}
-				
-				«IF setting.single»
-					public «setting.name»() {
-						sysKey = "«setting.name»";
+				«IF struct.type == "setting"»
+					private final String sysKey;
+					private long updateTS;
+					
+					public long updateTS() {
+						return updateTS;
 					}
-				«ELSEIF setting.keys.size == 0»
-					public «setting.name»() {
+					
+					public void updateTS(long updateTS) {
+						this.updateTS = updateTS;
+					}
+				«ENDIF»
+				«IF struct.keys == null || struct.keys.size == 0»
+					private «struct.name»() {
 						sysKey = null;
 					}
 				«ELSE»
-					public «setting.name»(«setting.keys.map[type.toJavaType + " " + name].join(", ")») {
-						«FOR f : setting.keys.filter[!type.isJavaSimpleType]»
-							Preconditions.checkArgument(«f.name» != null, "«setting.name»: Key field «f.name» cannot be null");
+					private «struct.name»(«struct.keys.map[type.toJavaType + " " + name].join(", ")») {
+						«FOR f : struct.keys.filter[!type.isJavaSimpleType]»
+							Preconditions.checkArgument(«f.name» != null, "«struct.name»: Key field «f.name» cannot be null");
 						«ENDFOR»
-						«FOR f : setting.keys»
+						«FOR f : struct.keys»
 							this.«f.name» = «f.name»;
 						«ENDFOR»
-						«FOR field : setting.structFields.filter[hasDefaultValue && !isKey(setting)]»
+						«FOR field : struct.structFields.filter[hasDefaultValue && !isKey(struct)]»
 							this.«field.name» = «getJavaDefaultValue(field)»;
 						«ENDFOR»
-						sysKey = «setting.keys.map['''String.valueOf(«name»)'''].join(" + SYS_KEY_SEPARATOR + ")»;
+						sysKey = «struct.keys.map['''String.valueOf(«name»)'''].join(" + SYS_KEY_SEPARATOR + ")»;
 					}
 				«ENDIF»
-				«IF setting.structFields.size > 0 && setting.structFields.filter[!isKey(setting)].size > 0»
-					public «setting.name»(«setting.structFields.map[type.toJavaType + " " + name].join(", ")») {
-						«FOR f : setting.structFields»
-							this.«f.name» = «f.name»;
-						«ENDFOR»
-						«IF setting.keys.size > 0»
-							sysKey = «setting.keys.map['''String.valueOf(«name»)'''].join(" + SYS_KEY_SEPARATOR + ")»;
-						«ELSEIF setting.single»
-							sysKey = "«setting.name»";
-						«ELSE»
-							sysKey = null;
-						«ENDIF»
-					}
-				«ENDIF»
+«««				«IF setting.structFields.size > 0 && setting.structFields.filter[!isKey(setting)].size > 0»
+«««					public «setting.name»(«setting.structFields.map[type.toJavaType + " " + name].join(", ")») {
+«««						«FOR f : setting.structFields»
+«««							this.«f.name» = «f.name»;
+«««						«ENDFOR»
+«««						«IF setting.keys.size > 0»
+«««							sysKey = «setting.keys.map['''String.valueOf(«name»)'''].join(" + SYS_KEY_SEPARATOR + ")»;
+«««						«ELSEIF setting.single»
+«««							sysKey = "«setting.name»";
+«««						«ELSE»
+«««							sysKey = null;
+«««						«ENDIF»
+«««					}
+«««				«ENDIF»
 				
-				«FOR field : setting.structFields»
+				«FOR field : struct.structFields»
 					// «field.comment»
-					private final «field.type.toJavaType» «field.name»;
+					private «field.type.toJavaType» «field.name»;
 					
 					public «field.type.toJavaType» «field.name»() {
 						return «field.name»;
 					}
-
+					«IF !field.isKey(struct) && (field.mutable || struct.mutable)»
+						public «struct.name» «field.name»(«field.type.toJavaType» «field.name») {
+							«IF !field.nullable && !field.isSimpleType»
+								Preconditions.checkArgument(«field.name» != null, "Field «field.name» is null");
+							«ENDIF»
+							this.«field.name» = «field.name»;
+							return this;
+						}
+					«ENDIF»
 				«ENDFOR»
 				public Object fieldValue(Field f) {
 					switch(f) {
-						«FOR f : setting.structFields»
+						«FOR f : struct.structFields»
 						case «f.name»:
 							return «f.name»();
 						«ENDFOR»
@@ -124,61 +130,62 @@ public class JavaClassesGenerator {
 					return null;
 				}
 				
-				@Override
-				public Object fieldValue(String fieldName) {
-					try {
-						return fieldValue(Field.valueOf(fieldName));
-					} catch(RuntimeException e) {
-						// TODO iweawer: do we need to do anything here?
+				«IF struct.type == "setting"»
+					@Override
+					public Object fieldValue(String fieldName) {
+						try {
+							return fieldValue(Field.valueOf(fieldName));
+						} catch(RuntimeException e) {
+							// TODO iweawer: do we need to do anything here?
+						}
+						return null;
 					}
-					return null;
-				}
-				
-				@Override
-				public Object [] fieldValues() {
-					return new Object[] {
-						«setting.structFields.map[name + "()"].join(", ")»
-					};
-				}
-				
-				@Override
-				public Map<String, Object> fieldValuesAsMap() {
-					return ImmutableMap.<String, Object> builder()
-						«setting.structFields.map[".put(\"" + name + "\", " + name + "())"].join("\n")»
-						.build();
-				}
-				
-				@Override
-				public String settingName() {
-					return "«setting.name»";
-				}
-				
-				@Override
-				public String fullSettingName() {
-					return "«setting.fullname»";
-				}
-				
-«««				@Override
-«««				public Iterable<SettingField> fields() {
-«««					Set<SettingField> fields = Sets.newHashSet();
-«««					«FOR field : setting.structFields»
-«««					fields.add(new SettingField("«setting.fullname»", sysKey, "«field.name»", «saveToKdb(field)»));
-«««					«ENDFOR»
-«««					return fields;
-«««				}
+					
+					@Override
+					public Object [] fieldValues() {
+						return new Object[] {
+							«struct.structFields.map[name + "()"].join(", ")»
+						};
+					}
+					
+					@Override
+					public Map<String, Object> fieldValuesAsMap() {
+						return ImmutableMap.<String, Object> builder()
+							«struct.structFields.map[".put(\"" + name + "\"," + name + "())"].join("\n")»
+							.build();
+					}
+					
+					@Override
+					public String settingName() {
+						return "«struct.name»";
+					}
+					
+					@Override
+					public String fullSettingName() {
+						return "«struct.fullname»";
+					}
+					
+					@Override
+					public Iterable<SettingField> fields() {
+						Set<SettingField> fields = Sets.newHashSet();
+						«FOR field : struct.structFields»
+						fields.add(new SettingField("«struct.fullname»", sysKey, "«field.name»", «saveToDb(field)»));
+						«ENDFOR»
+						return fields;
+					}
 			
-				@Override
+				«ENDIF»
 				public String sysKey() {
 					return sysKey;
 				}
 				
 				public Builder copy() {
 					return builder()
-					«setting.structFields.map['''.«name»(«name»)'''].join("\n")»;
+					«struct.structFields.map['''.«name»(«name»)'''].join("\n")»;
 				}
 				
 				@SuppressWarnings("unchecked")
-				public «setting.name» update(«setting.name» s, boolean checkKey, boolean updateKey) {
+				public «struct.name» update(«struct.name» s, boolean checkKey, boolean updateKey) {
 					if(checkKey && !sysKey().equals(s.sysKey())) {
 						logger.error("Setting key mismatch: " + sysKey() + " != " + s.sysKey());
 						return this;
@@ -186,12 +193,12 @@ public class JavaClassesGenerator {
 					Builder b = copy();
 					b.updateTS(s.updateTS());
 					if(updateKey) {
-						«FOR f : setting.structFields.filter[isKey(setting)]»
-							b.«f.name»(f.«f.name»());						
+						«FOR f : struct.structFields.filter[isKey(struct)]»
+							b.«f.name»(s.«f.name»());						
 						«ENDFOR»
 					}
-					«FOR f : setting.structFields.filter[!isKey(setting)]»
-						b.«f.name»(f.«f.name»());						
+					«FOR f : struct.structFields.filter[!isKey(struct)]»
+						b.«f.name»(s.«f.name»());						
 					«ENDFOR»
 					return b.build();
 				}
@@ -201,7 +208,11 @@ public class JavaClassesGenerator {
 				}
 				
 				public static class Builder {
-					private Builder() { }
+					private Builder() { 
+						«FOR field : struct.structFields.filter[hasDefaultValue && !isKey(struct)]»
+							this.«field.name» = «getJavaDefaultValue(field)»;
+						«ENDFOR»
+					}
 					
 					private long updateTS;
 					
@@ -210,7 +221,7 @@ public class JavaClassesGenerator {
 						return this;
 					}
 					
-					«FOR field : setting.structFields»
+					«FOR field : struct.structFields»
 						// «field.comment»
 						private «field.type.toJavaType» «field.name»«IF field.hasDefaultValue» = «getJavaDefaultValue(field)»«ENDIF»;
 						private boolean «field.name»_isSet;
@@ -220,22 +231,35 @@ public class JavaClassesGenerator {
 							this.«field.name»_isSet = true;
 							return this;
 						}
+						
+						public «field.type.toJavaType» «field.name»() {
+							return «field.name»;
+						}
+						
+						public boolean «field.name»_isSet() {
+							return «field.name»_isSet;
+						}
 					«ENDFOR»
 					
-					public «setting.name» build() {
-						«FOR field : setting.keys»
-						Preconditions.checkArgument(«IF !field.type.isJavaSimpleType»«field.name» != null && «ENDIF»«field.name»_isSet, "«setting.name»: Key field «field.name» is not set. Failed to create object");
+					public «struct.name» build() {
+						«FOR field : struct.structFields.filter[isKey(struct) || (!nullable && !hasDefaultValue)]»
+							Preconditions.checkArgument(«IF !field.type.isJavaSimpleType»«field.name» != null && «ENDIF»«field.name»_isSet, "«struct.name»: Key field «field.name» is not set. Failed to create object");
 						«ENDFOR»
-						«setting.name» r = new «setting.name»(«setting.structFields.map[name].join(", ")»);
-						r.updateTS(updateTS);
+						«struct.name» r = new «struct.name»(«struct.structFields.filter[isKey(struct)].map[name].join(", ")»);
+						«FOR field : struct.structFields.filter[!isKey(struct)]»
+							r.«field.name» = «field.name»;
+						«ENDFOR»
+						«IF struct.type == "setting"»
+							r.updateTS(updateTS);
+						«ENDIF»
 						return r;
 					}
 					
-					public «setting.name» fromMap(Map<String, String> fields) {
+					public Builder fromMap(Map<String, String> fields) {
 						for(String field : fields.keySet()) {
 							Object o = fields.get(field);
 							switch(field) {
-								«FOR field : setting.structFields»
+								«FOR field : struct.structFields»
 									case "«field.name»":
 										«IF field.type instanceof Struct»
 											«field.name»(JSONStructSerializer.fromJson(fields.get(field), «(field.type as Struct).fullname».class);
@@ -243,11 +267,11 @@ public class JavaClassesGenerator {
 											«field.name»(JSONStructSerializer.«typeNameToFunc(field.type)»_fromJsonObj(JSONValue.parse(fields.get(field))));
 										«ELSEIF isSimple(field.type)»
 											if(o != null && o instanceof String) { 
-												«field.name»Builder.«field.name»(«restoreSimple(field.type.simple, "(String) o")»);
+												«field.name»(«restoreSimple(field.type.simple, "(String) o")»);
 											}
 										«ELSEIF isEnum(field.type)»
 											if(o != null && o instanceof String) { 
-												«field.name»Builder.«field.name»(«restoreEnum(field.type.ref as EnumType, "(String) o")»);
+												«field.name»(«restoreEnum(field.type.ref as EnumType, "(String) o")»);
 											}
 										«ENDIF»
 										break;
@@ -255,10 +279,12 @@ public class JavaClassesGenerator {
 								}
 
 						}
-						if(fields.containsKey("updateTS")) {
-							updateTS(Long.parseLong(fields.get("updateTS")));
-						}
-						return build();
+						«IF struct.type == "setting"»
+							if(fields.containsKey("updateTS")) {
+								updateTS(Long.parseLong(fields.get("updateTS")));
+							}
+						«ENDIF»
+						return this;
 					}
 					
 					
@@ -266,7 +292,7 @@ public class JavaClassesGenerator {
 				}
 			}
 			'''
-			fsa.generateFile("java/" + setting.fullname.replaceAll("\\.", "/") + ".java", output)
+			fsa.generateFile("java/" + struct.fullname.replaceAll("\\.", "/") + ".java", output)
 		}
 	}
 		
@@ -488,33 +514,30 @@ def private String restoreSimple(SimpleType type, String objName) {
 		return "";
 	}
 	
-//	
-//	def private String saveToKdb(Field field) {
-//		if(field.type instanceof SimpleTypeAndEnum) {
-//			if((field.type as SimpleTypeAndEnum).e != null) {
-//				return javaToJson(field.type, field.name + "()");
-//			} else {
-//				val String v = field.name + "()"
-//				switch((field.type as SimpleTypeAndEnum).s) {
-//					case BOOLEAN: return v + " ? 1d : 0d"
-//					case BYTE: return "(double) " + v
-//					case CHAR: return "String.valueOf(" + v + ")"
-//					case DATE: return "String.valueOf(" + v + ")"
-//					case DATETIME: return "String.valueOf(" + v + ")"
-//					case DOUBLE: return field.name + "()"
-//					case FLOAT: return "(double) " + v
-//					case GUID: return "String.valueOf(" + v + ")"
-//					case INT: return "(double) " + v
-//					case LONG: return "(double) " + v
-//					case SHORT: return "(double) " + v
-//					case STRING: return v
-//					case TIME: return "String.valueOf(" + v + ")"
-//					case TIMESTAMP: return "(double) " + v
-//				}
-//			}
-//			
-//		} else {
-//			return javaToJson(field.type, field.name + "()")
-//		}
-//	}
+	
+	def private String saveToDb(Field field) {
+		if(isEnum(field.type)) {
+			return javaToJson(field.type, field.name + "()");
+		} else if(isSimple(field.type)) {
+			val String v = field.name + "()"
+			switch(field.type.simple) {
+				case BOOLEAN: return v + " ? 1d : 0d"
+				case BYTE: return "(double) " + v
+				case CHAR: return "String.valueOf(" + v + ")"
+				case DATE: return "String.valueOf(" + v + ")"
+				case DATETIME: return "String.valueOf(" + v + ")"
+				case DOUBLE: return field.name + "()"
+				case FLOAT: return "(double) " + v
+				case GUID: return "String.valueOf(" + v + ")"
+				case INT: return "(double) " + v
+				case LONG: return "(double) " + v
+				case SHORT: return "(double) " + v
+				case STRING: return v
+				case TIME: return "String.valueOf(" + v + ")"
+				case TIMESTAMP: return "(double) " + v
+			}
+		} else {
+			return javaToJson(field.type, field.name + "()")
+		}
+	}
 }

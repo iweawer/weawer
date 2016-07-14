@@ -30,7 +30,7 @@ Field:
 ;
 
 enum SimpleType:
-	boolean|byte|char|short|int|long|float|double|string|date|time|datetime|timestamp|guid
+	boolean|byte|char|short|int|long|float|double|string|date|time|datetime|timestamp|guid|bytearray
 ;
 
 EnumType:

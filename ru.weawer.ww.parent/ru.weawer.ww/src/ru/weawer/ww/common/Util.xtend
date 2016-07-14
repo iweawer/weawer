@@ -107,6 +107,14 @@ public class Util {
 		return (t.eContainer as Package).name + "." + t.name 
 	}
 	
+	def public static String getLongname(Struct t) {
+		return getFullname(t).replaceAll("\\.", "_")
+	}
+	
+	def public static String getLongname(EnumType t) {
+		return getFullname(t).replaceAll(".", "_")
+	}
+	
 	def public static String getFullname(SettingsContainer t) {
 		return (t.eContainer as Package).name + "." + t.name 
 	}

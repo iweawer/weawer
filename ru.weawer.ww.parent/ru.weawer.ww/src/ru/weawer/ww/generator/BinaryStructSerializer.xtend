@@ -16,10 +16,10 @@ import static extension ru.weawer.ww.common.TypeUtil.*
 import static extension ru.weawer.ww.common.Util.*
 
 @Singleton
-public class JsonStructSerializer {
+public class BinaryStructSerializer {
 	
 	@Generate("java")
-	def public void writeStructSerializer(java.util.List<String> packages, ResourceSet resource, IFileSystemAccess2 fsa) {
+	def public void writeParser(java.util.List<String> packages, ResourceSet resource, IFileSystemAccess2 fsa) {
 
 
 		val output = '''
@@ -34,7 +34,7 @@ public class JsonStructSerializer {
 		import org.apache.logging.log4j.LogManager;
 		import org.apache.logging.log4j.Logger;
 		
-		public class JSONStructSerializer {
+		public class BinaryStructSerializer {
 			
 			private static final Logger logger = LogManager.getLogger();
 			

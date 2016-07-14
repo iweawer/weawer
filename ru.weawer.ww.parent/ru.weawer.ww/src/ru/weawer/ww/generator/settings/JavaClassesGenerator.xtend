@@ -37,12 +37,17 @@ public class JavaClassesGenerator {
 			import java.util.*;
 			import java.util.stream.*;
 			import java.time.*;
+			import java.nio.charset.Charset;
+			import java.io.*;
+			import java.nio.*;
 			import org.json.simple.*;
 			import com.google.common.base.*;
 			import com.google.common.collect.*;
 			import org.apache.logging.log4j.LogManager;
 			import org.apache.logging.log4j.Logger;
 			import ru.weawer.ww.JSONStructSerializer;
+			import ru.weawer.ww.BinaryParser;
+			import ru.weawer.ww.struct.Struct;
 			«IF struct.type == "setting"»
 				import ru.weawer.ww.settings.Setting;
 				import ru.weawer.ww.settings.SettingField;
@@ -50,13 +55,19 @@ public class JavaClassesGenerator {
 			«IF struct.comment != null»
 			// «struct.comment»
 			«ENDIF»
-			public class «struct.name»	implements Setting {
+			public class «struct.name»	implements Struct«IF struct.type=='setting'», Setting«ENDIF» {
 				
 				private static final Logger logger = LogManager.getLogger();
+				private static final Charset charset = Charset.forName("UTF-8");
 				
 				public static enum Field {
 					«struct.structFields.map[name].join(",\n")»
 				}
+				
+				private static final int BITMASK_LENGTH = «if(struct.structFields.filter[nullable].size % 8 > 0) 
+						struct.structFields.filter[nullable].size / 8 + 1 
+						else 
+						struct.structFields.filter[nullable].size / 8»; 
 				
 				«IF struct.type == "setting"»
 					private final String sysKey;
@@ -102,7 +113,7 @@ public class JavaClassesGenerator {
 «««						«ENDIF»
 «««					}
 «««				«ENDIF»
-				
+
 				«FOR field : struct.structFields»
 					// «field.comment»
 					private «field.type.toJavaType» «field.name»;
@@ -151,8 +162,7 @@ public class JavaClassesGenerator {
 					@Override
 					public Map<String, Object> fieldValuesAsMap() {
 						return ImmutableMap.<String, Object> builder()
-							«struct.structFields.map[".put(\"" + name + "\"," + name + "())"].join("\n")»
-							.build();
+							«struct.structFields.map['''.put("«name»", «name»())'''].join("\n")».build();
 					}
 					
 					@Override
@@ -173,7 +183,7 @@ public class JavaClassesGenerator {
 						«ENDFOR»
 						return fields;
 					}
-			
+					
 				«ENDIF»
 				public String sysKey() {
 					return sysKey;
@@ -286,9 +296,71 @@ public class JavaClassesGenerator {
 						«ENDIF»
 						return this;
 					}
+				}
+				
+				@Override
+				public String toJson() {
+					return JSONStructSerializer.toJson(this);
+				}
+				
+				public byte [] toByteArray() {
+					ByteBuffer buf = ByteBuffer.allocate(1000000);
+					toByteArray(buf);
+					buf.flip();
+					byte [] b = new byte[buf.limit()];
+					buf.get(b, 0, b.length);
+					return b;
+				}
+
+				public void toByteArray(ByteBuffer buf) {
+					final int __position = buf.position();
+					«IF struct.structFields.filter[nullable].size > 0»
+						byte[] __bitmap = new byte[BITMASK_LENGTH]; 
+						buf.position(buf.position() + 4 + BITMASK_LENGTH);
+						BitSet bitSet = BitSet.valueOf(__bitmap);
+					«ENDIF»
+					«reset»
 					
-					
-					
+					«FOR field : struct.structFields»
+						«IF isSimple(field.type) || !field.isNullable»
+							BinaryParser.write«field.type.toName»(buf, «field.name»);
+						«ELSE»
+							if(«field.name» == null) {
+								bitSet.set(«k»); 
+							} else {
+								BinaryParser.write«field.type.toName»(buf, «field.name»);
+							}
+						«ENDIF»
+						«increment»
+					«ENDFOR»
+					int __length = buf.position() - __position - 4;
+					buf.putInt(__position, __length);
+					«IF struct.structFields.filter[nullable].size > 0»
+						__bitmap = bitSet.toByteArray();
+						for(int __i = 0; __i < __bitmap.length; __i++) {
+							buf.put(__position + 4 + __i, __bitmap[__i]);
+						}
+					«ENDIF»
+				}
+				
+				public static «struct.name» fromByteArray(ByteBuffer buf) {
+					final Builder builder = builder();
+					final int __length = buf.getInt();
+					«IF struct.structFields.filter[nullable].size > 0» 
+						final byte[] __bitmap = new byte[BITMASK_LENGTH];
+						buf.get(__bitmap);
+						BitSet bitSet = BitSet.valueOf(__bitmap);
+					«ENDIF»
+					«reset()»
+					«FOR field : struct.structFields»
+						«IF isJavaSimpleType(field.type) || !field.isNullable»
+							builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
+						«ELSE»
+							if(!bitSet.get(«k»)) builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
+						«ENDIF»
+						«increment()»
+					«ENDFOR»
+					return builder.build();
 				}
 			}
 			'''
@@ -296,11 +368,11 @@ public class JavaClassesGenerator {
 		}
 	}
 		
-//	def private boolean isKey(Struct s, Field f) {
-//		return s.keys.contains(f)
-//	}
-	
-def private String restoreSimple(SimpleType type, String objName) {
+	//	def private boolean isKey(Struct s, Field f) {
+	//		return s.keys.contains(f)
+	//	}
+		
+	def private String restoreSimple(SimpleType type, String objName) {
 		switch(type) {
 			case BOOLEAN: {
 				"Boolean.parseBoolean(" + objName + ")"
@@ -344,10 +416,14 @@ def private String restoreSimple(SimpleType type, String objName) {
 			case TIMESTAMP: {
 				"Long.parseLong(" + objName + ")"
 			}
+			case BYTEARRAY: {
+				objName + ".getBytes(charset)"
+			}
 		}
 	}
 	
 	def private String restoreEnum(EnumType type, String objName) {
+		
 		'''«type.fullname».fromString(«objName»)'''
 	}	
 //	def private String restoreFromSetting(Field f) {
@@ -466,6 +542,9 @@ def private String restoreSimple(SimpleType type, String objName) {
 				case TIMESTAMP: {
 					return f.^default.s
 				}
+				case BYTEARRAY: {
+					return "null"
+				}
 			}
 		} else {
 			if(f.type instanceof List) {
@@ -535,9 +614,20 @@ def private String restoreSimple(SimpleType type, String objName) {
 				case STRING: return v
 				case TIME: return "String.valueOf(" + v + ")"
 				case TIMESTAMP: return "(double) " + v
+				case BYTEARRAY: return "new String(" + v + ")"
 			}
 		} else {
 			return javaToJson(field.type, field.name + "()")
 		}
+	}
+	
+	private static int k;
+	
+	def static private void increment() {
+		k = k + 1;
+	}
+	
+	def static private void reset() {
+		k = 0;
 	}
 }

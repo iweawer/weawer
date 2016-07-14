@@ -46,6 +46,7 @@ public class TypeUtil {
 			case SimpleType.DATETIME: return "LocalDateTime"
 			case SimpleType.TIMESTAMP: return "long"
 			case SimpleType.GUID: return "java.util.UUID"
+			case SimpleType.BYTEARRAY: return "byte[]"
 		}
 	}
 	
@@ -65,6 +66,7 @@ public class TypeUtil {
 			case SimpleType.DATETIME: return "LocalDateTime"
 			case SimpleType.TIMESTAMP: return "Long"
 			case SimpleType.GUID: return "java.util.UUID"
+			case SimpleType.BYTEARRAY: return "byte[]"
 		}
 	}
 	
@@ -81,11 +83,42 @@ public class TypeUtil {
 		} else if(isEnum(type)) {
 			return Util.getFullname(type.ref as EnumType)
 		} else if(isMap(type)) {
-			return "Map<" + toJavaObjectType(type.map.key) + ", " + toJavaObjectType(type.map.value) + ">"
+			return toJavaType(type.map)
 		} else if(isList(type)) {
-			return "List<" + toJavaObjectType(type.list.elem) + ">"
+			return toJavaType(type.list)
 		} else if(isStruct(type)) {
 			return Util.getFullname(type.ref as Struct)
+		}
+		return null;
+	}
+	
+	def public static String toJavaType(Map map) {
+		return "Map<" + toJavaObjectType(map.key) + ", " + toJavaObjectType(map.value) + ">"
+	}
+	
+	def public static String toJavaType(List list) {
+		return "List<" + toJavaObjectType(list.elem) + ">"
+	}
+	
+	def public static String toName(Map map) {
+		return "Map" + map.key.toName + map.value.toName
+	}
+	
+	def public static String toName(List list) {
+		return "List" + list.elem.toName
+	}
+	
+	def public static String toName(Type type) {
+		if(isSimple(type)) {
+			return type.simple.getName
+		} else if(isEnum(type)) {
+			return (type.ref as EnumType).name
+		} else if(isMap(type)) {
+			return toName(type.map)
+		} else if(isList(type)) {
+			return toName(type.list)
+		} else if(isStruct(type)) {
+			return Util.getLongname(type.ref as Struct)
 		}
 		return null;
 	}

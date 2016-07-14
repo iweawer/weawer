@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 
+import ru.weawer.ww.generator.BinaryParsersGenerator;
 import ru.weawer.ww.generator.EnumsGenerator;
 import ru.weawer.ww.generator.JsonStructSerializer;
 import ru.weawer.ww.generator.WwDslGenerator;
@@ -62,6 +63,7 @@ public class Main {
 		dslGenerator.registerGenerator(injector.getInstance(EnumsGenerator.class));
 		dslGenerator.registerGenerator(injector.getInstance(JavaClassesGenerator.class));
 		dslGenerator.registerGenerator(injector.getInstance(JsonStructSerializer.class));
+		dslGenerator.registerGenerator(injector.getInstance(BinaryParsersGenerator.class));
 		
 		String generatorProp = System.getProperty(GENERATORS_PROPERTY);
 		if(generatorProp != null && !generatorProp.isEmpty()) {

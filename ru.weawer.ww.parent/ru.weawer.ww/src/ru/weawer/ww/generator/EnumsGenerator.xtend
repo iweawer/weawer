@@ -123,6 +123,18 @@ class EnumsGenerator {
 				}
 				return null;
 			}
+			
+			// «i = new AtomicInteger(0)»
+			private static final ImmutableMap<Integer, «e.name»> byVal = ImmutableMap.<Integer, «e.name»> builder()
+			«FOR f : e.fields»
+					.put(«if(allzero) i.get() else f.^val», «f.name»)
+					«increment(i)»
+			«ENDFOR»
+					.build();
+				
+			public static «e.name» fromVal(int val) {
+				return byVal.get(val);
+			}
 		}
 		'''
 		fsa.generateFile("java/" + e.fullname.replaceAll("\\.", "/") + ".java", output)

@@ -313,16 +313,20 @@ public class JavaClassesGenerator {
 				}
 
 				public void toByteArray(ByteBuffer buf) {
-					final int __position = buf.position();
+					final int __length_position = buf.position();
+					buf.position(buf.position() + 4);
+					BinaryParser.writestring(buf, "«struct.longname»");
 					«IF struct.structFields.filter[nullable].size > 0»
+						final int __bitmap_position = buf.position();
 						byte[] __bitmap = new byte[BITMASK_LENGTH]; 
-						buf.position(buf.position() + 4 + BITMASK_LENGTH);
-						BitSet bitSet = BitSet.valueOf(__bitmap);
+						buf.position(__bitmap_position + BITMASK_LENGTH);
+						BitSet bitSet = BitSet.valueOf(__bitmap);						
 					«ENDIF»
+					
 					«reset»
 					
 					«FOR field : struct.structFields»
-						«IF isSimple(field.type) || !field.isNullable»
+						«IF isJavaSimpleType(field.type) || !field.isNullable»
 							BinaryParser.write«field.type.toName»(buf, «field.name»);
 						«ELSE»
 							if(«field.name» == null) {
@@ -333,12 +337,12 @@ public class JavaClassesGenerator {
 						«ENDIF»
 						«increment»
 					«ENDFOR»
-					int __length = buf.position() - __position - 4;
-					buf.putInt(__position, __length);
+					int __length = buf.position() - __length_position - 4;
+					buf.putInt(__length_position, __length);
 					«IF struct.structFields.filter[nullable].size > 0»
 						__bitmap = bitSet.toByteArray();
 						for(int __i = 0; __i < __bitmap.length; __i++) {
-							buf.put(__position + 4 + __i, __bitmap[__i]);
+							buf.put(__bitmap_position + __i, __bitmap[__i]);
 						}
 					«ENDIF»
 				}
@@ -346,6 +350,7 @@ public class JavaClassesGenerator {
 				public static «struct.name» fromByteArray(ByteBuffer buf) {
 					final Builder builder = builder();
 					final int __length = buf.getInt();
+					final String __name = BinaryParser.readstring(buf);
 					«IF struct.structFields.filter[nullable].size > 0» 
 						final byte[] __bitmap = new byte[BITMASK_LENGTH];
 						buf.get(__bitmap);
@@ -426,69 +431,6 @@ public class JavaClassesGenerator {
 		
 		'''«type.fullname».fromString(«objName»)'''
 	}	
-//	def private String restoreFromSetting(Field f) {
-//		if(isList(f.type) || isMap(f.type)) {
-//			return '''b.«f.name»(f.getString() != null ? («toJavaObjectType(f.type)») JSONValue.parse(f.getString()) : null);'''
-//		} else if(f.type instanceof SimpleTypeAndEnum) {
-//			if((f.type as SimpleTypeAndEnum).e != null) {
-//				val e = (f.type as SimpleTypeAndEnum).e
-//			
-//				return '''
-//					try {
-//						if(f.getString() != null) b.«f.name»(«e.fullname».valueOf(f.getString()));
-//					} catch(Exception e) {
-//						logger.error("Unsupported value for enum «e.fullname»: " + f.getString()); 
-//					}
-//					'''
-//			} else {
-//				val SimpleType st = (f.type as SimpleTypeAndEnum).s
-//				switch(st) {
-//					case BOOLEAN: {
-//						"b." + f.name + "(!Double.isNaN(f.getDouble()) && f.getDouble() != 0);"
-//					}
-//					case BYTE: {
-//						"b." + f.name + "((f.getDouble() != null ? (byte) f.getDouble().doubleValue() : 0));"
-//					}
-//					case CHAR: {
-//						"b." + f.name + "(f.getString().charAt(0));"
-//					}
-//					case DATE: {
-//						"b." + f.name + "(LocalDate.parse(f.getString()));"
-//					}
-//					case DATETIME: {
-//						"b." + f.name + "(LocalDateTime.parse(f.getString()));"
-//					}
-//					case DOUBLE: {
-//						"b." + f.name + "(f.getDouble());"
-//					}
-//					case FLOAT: {
-//						"b." + f.name + "(f.getDouble() != null ? (float) f.getDouble().doubleValue() : Float.NaN);"
-//					}
-//					case GUID: {
-//						"b." + f.name + "(java.util.UUID.fromString(f.getString()));" 
-//					}
-//					case INT: {
-//						"b." + f.name + "(f.getDouble() != null ? (int) f.getDouble().doubleValue() : 0);"
-//					}
-//					case LONG: {
-//						"b." + f.name + "(f.getDouble() != null ? (long) f.getDouble().doubleValue() : 0);"
-//					}
-//					case SHORT: {
-//						"b." + f.name + "((f.getDouble() != null ? (short) f.getDouble().doubleValue() : 0));"
-//					}
-//					case STRING: {
-//						"b." + f.name + "(f.getString());"
-//					}
-//					case TIME: {
-//						"b." + f.name + "(LocalTime.parse(f.getString()));"
-//					}
-//					case TIMESTAMP: {
-//						"b." + f.name + "((f.getDouble() != null ? (long) f.getDouble().doubleValue() : 0));"
-//					}
-//				}
-//			}
-//		}
-//	}
 	
 	def private boolean hasDefaultValue(Field f) {
 		return f.^default != null || f.type instanceof List || f.type instanceof Map
@@ -555,34 +497,6 @@ public class JavaClassesGenerator {
 			}
 		}
 	}
-	
-//	def private boolean isNullable(Field f) {
-//		if(f.type instanceof SimpleTypeAndEnum) {
-//			val SimpleTypeAndEnum t = f.type as SimpleTypeAndEnum
-//			if(t.e != null) {
-//				return true;
-//			} else {
-//				val SimpleType st = (f.type as SimpleTypeAndEnum).s
-//				switch(st) {
-//					case BOOLEAN: 	return false
-//					case BYTE: 		return false
-//					case CHAR: 		return false
-//					case DATE: 		return true
-//					case DATETIME: 	return true
-//					case DOUBLE: 	return false
-//					case FLOAT: 	return false
-//					case GUID: 		return true
-//					case INT: 		return false
-//					case LONG: 		return false
-//					case SHORT: 	return false
-//					case STRING: 	return true
-//					case TIME: 		return false
-//					case TIMESTAMP: return false
-//				}
-//			}
-//		}
-//		return true;
-//	}
 	
 	def private String typeNameToFunc(Type t) {
 		if(isStruct(t)) return (t.ref as Struct).name;

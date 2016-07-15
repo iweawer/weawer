@@ -112,7 +112,7 @@ public class Util {
 	}
 	
 	def public static String getLongname(EnumType t) {
-		return getFullname(t).replaceAll(".", "_")
+		return getFullname(t).replaceAll("\\.", "_")
 	}
 	
 	def public static String getFullname(SettingsContainer t) {

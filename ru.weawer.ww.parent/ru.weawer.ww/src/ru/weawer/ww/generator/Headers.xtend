@@ -16,7 +16,7 @@ class Headers {
 ////////////////////////////////////////////////////////////////
 //	PLEASE DO NOT EDIT!
 //	The file is generated automatically from Weawer DSL
-//	To change file edit master file .sti
+//	To change file edit master file .ww
 //  Revision: «revision»
 ////////////////////////////////////////////////////////////////
 	'''; 

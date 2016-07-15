@@ -112,7 +112,7 @@ public class TypeUtil {
 		if(isSimple(type)) {
 			return type.simple.getName
 		} else if(isEnum(type)) {
-			return (type.ref as EnumType).name
+			return Util.getLongname(type.ref as EnumType)
 		} else if(isMap(type)) {
 			return toName(type.map)
 		} else if(isList(type)) {

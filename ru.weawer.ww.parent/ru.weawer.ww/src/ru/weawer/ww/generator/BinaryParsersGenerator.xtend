@@ -17,7 +17,7 @@ import static extension ru.weawer.ww.common.Util.*
 public class BinaryParsersGenerator {
 	
 	@Generate("java")
-	def public void wasdfriteStructSerializer(java.util.List<String> packages, ResourceSet resource, IFileSystemAccess2 fsa) {
+	def public void writeStructSerializer(java.util.List<String> packages, ResourceSet resource, IFileSystemAccess2 fsa) {
 
 
 		val output = '''
@@ -256,6 +256,7 @@ public class BinaryParsersGenerator {
 	def private void putFunctionFor(Map m, HashMap<String, String> f) {
 		var func = '''
 		public static void write«m.toName»(ByteBuffer buf, «m.toJavaType» m) {
+			writestring(buf, "«m.toName»");
 			buf.putInt(m.size());
 			for(Map.Entry<«m.key.toJavaObjectType», «m.value.toJavaObjectType»> e : m.entrySet()) {
 				write«m.key.toName»(buf, e.getKey());
@@ -264,6 +265,7 @@ public class BinaryParsersGenerator {
 		}
 		
 		public static «m.toJavaType» read«m.toName»(ByteBuffer buf) {
+			String __name = readstring(buf);
 			int __size = buf.getInt();
 			if(__size > buf.capacity()) throw new RuntimeException("Too big string size");
 			«m.toJavaType» m = Maps.newHashMap();
@@ -298,6 +300,7 @@ public class BinaryParsersGenerator {
 	def private void putFunctionFor(List l, HashMap<String, String> f) {
 		var func = '''
 		public static void write«l.toName»(ByteBuffer buf, «l.toJavaType» l) {
+			writestring(buf, "«l.toName»");
 			buf.putInt(l.size());
 			for(«l.elem.toJavaType» t : l) {
 				write«l.elem.toName»(buf, t);
@@ -305,6 +308,7 @@ public class BinaryParsersGenerator {
 		}
 		
 		public static «l.toJavaType» read«l.toName»(ByteBuffer buf) {
+			String __name = readstring(buf);
 			int __size = buf.getInt();
 			if(__size > buf.capacity()) throw new RuntimeException("Too big string size");
 			«l.toJavaType» m = Lists.newArrayList();
@@ -341,11 +345,11 @@ public class BinaryParsersGenerator {
 	
 	def private void putFunctionFor(EnumType e, HashMap<String, String> f) {
 		var func = '''
-		public static void write«e.name»(ByteBuffer buf, «e.name» d) {
+		public static void write«e.longname»(ByteBuffer buf, «e.name» d) {
 			writeint(buf, d.val());
 		}
 		
-		public static «e.name» read«e.name»(ByteBuffer buf) {
+		public static «e.name» read«e.longname»(ByteBuffer buf) {
 			return «e.name».fromVal(readint(buf));
 		}
 		'''

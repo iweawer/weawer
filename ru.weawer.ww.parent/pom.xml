@@ -21,6 +21,20 @@
 		<module>ru.weawer.ww.feature</module>
 		<module>ru.weawer.ww.repository</module>
 	</modules>
+	
+	<distributionManagement>
+	    <repository>
+		    <id>nexus</id>
+		    <name>Releases</name>
+		    <url>http://main.weawer.ru:8081/repository/maven-releases</url>
+	    </repository>
+	    <snapshotRepository>
+		    <id>nexus</id>
+		    <name>Snapshot</name>
+		    <url>http://main.weawer.ru:8081/repository/maven-snapshots</url>
+	    </snapshotRepository>
+  	</distributionManagement>
+	
 	<build>
 		<plugins>
 			<plugin>

@@ -19,6 +19,7 @@ subprojects {
 	apply from: "${rootDir}/gradle/maven-deployment.gradle"
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
+	apply plugin: 'maven'
 	
 	group = 'ru.weawer.ww'
 	version = '1.0.0-SNAPSHOT'
@@ -29,4 +30,48 @@ subprojects {
 	configurations.all {
 		exclude group: 'asm'
 	}
+	
+	uploadArchives {
+	    repositories {
+	        mavenDeployer {
+	        	mavenLocal()
+	        
+	            repository(url: "${nexusUrl}/repository/maven-releases/") {
+	                authentication(userName: nexusUsername, password: nexusPassword)
+	            }
+	            snapshotRepository(url: "${nexusUrl}/repository/maven-snapshots") {
+	                authentication(userName: nexusUsername, password: nexusPassword)
+	            }
+	        }
+	    }
+	}
+/*	
+	publishing {
+	
+		publications {
+		    mavenJava(MavenPublication) {
+		        from components.java
+		    }
+		}
+	
+		repositories {
+			
+			mavenLocal()
+		
+	        maven {
+	        	name "snapshots"
+	            url "http://main.weawer.ru:8081/repository/maven-snapshots/"
+	            credentials {
+		            username 'itkachev'
+		            password 'J4su&0td1!OP'
+		        }
+	        }
+	        
+	        maven {
+	        	name "releases"
+	            url "http://main.weawer.ru:8081/repository/maven-releases/"
+	        }
+        }
+    }
+*/
 }

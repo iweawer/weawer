@@ -3,7 +3,5 @@
 /xtend-gen/
 /.settings/
 /build/
-/META-INF/
-/model/
 /.classpath
 /plugin.xml_gen

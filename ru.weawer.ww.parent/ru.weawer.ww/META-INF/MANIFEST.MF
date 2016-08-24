@@ -1,0 +1,29 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ru.weawer.ww
+Bundle-Vendor: My Company
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: ru.weawer.ww; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.xtext,
+ org.eclipse.xtext.xbase,
+ org.eclipse.equinox.common;bundle-version="3.5.0",
+ org.eclipse.emf.ecore,
+ org.eclipse.xtext.xbase.lib,
+ org.antlr.runtime,
+ org.eclipse.xtext.util,
+ org.eclipse.xtend.lib,
+ org.eclipse.emf.common
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: ru.weawer.ww.generator,
+ ru.weawer.ww.serializer,
+ ru.weawer.ww.wwDsl.util,
+ ru.weawer.ww.parser.antlr,
+ ru.weawer.ww.scoping,
+ ru.weawer.ww.wwDsl,
+ ru.weawer.ww,
+ ru.weawer.ww.services,
+ ru.weawer.ww.wwDsl.impl,
+ ru.weawer.ww.parser.antlr.internal,
+ ru.weawer.ww.validation
+Import-Package: org.apache.log4j

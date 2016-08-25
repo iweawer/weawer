@@ -1,9 +1,12 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'maven'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-version = '1.0'
+
+group = 'ru.weawer.ww'
+version = '1.0.0-SNAPSHOT'
 
 jar {
     manifest {
@@ -29,8 +32,15 @@ test {
 
 uploadArchives {
     repositories {
-       flatDir {
-           dirs 'repos'
-       }
+        mavenDeployer {
+        	mavenLocal()
+        
+            repository(url: "${nexusUrl}/repository/maven-releases/") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+            snapshotRepository(url: "${nexusUrl}/repository/maven-snapshots") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+        }
     }
 }

@@ -14,7 +14,7 @@ Package:
 ;
 
 Element:
-	Import|EnumType|Tag|TaggableElement|SettingsContainer
+	Import|EnumType|Tag|TaggableElement
 ;
 
 TaggableElement:
@@ -45,7 +45,7 @@ EnumField:
 ;
 
 Tag:
-	'tag' name=ID (hasValue?='hasValue')? (comment=COMMENT)?
+	'tag' name=ID (hasValue?='hasValue')? ('[' tags+=TagWithValue+ ']')? (comment=COMMENT)?
 ;
 
 TagWithValue:
@@ -86,18 +86,6 @@ FilterExpression:
 	elemType=('fields'|'structs'|'settings') 'from' 'packages' packages+=[Package | QualifiedName]+ ('byTags' tags+=TagWithValue+)?
 ;
 
-SettingsContainer:
-	'settings' 'container' name=ID '{'
-		(comment=COMMENT)?
-		fields+=Setting*
-		fieldsExpr+=FilterExpression*
-	'}'
-;
-
-Setting:
-	('setting' 'ref' '=' ref=[Struct | QualifiedName])|(field=Struct)
-;
-
 QualifiedName:
   ID('.'ID)*
 ;
@@ -132,7 +120,7 @@ terminal fragment HEX_DIGIT: '0'..'9'|'a'..'f'|'A'..'F';
 terminal fragment FOUR_HEX_DIGITS: HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT ;
 
 // 16fd2706-8baf-433b-82eb-8c7fada847da;
-terminal UUID : FOUR_HEX_DIGITS FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS FOUR_HEX_DIGITS FOUR_HEX_DIGITS;
+terminal UUID : FOUR_HEX_DIGITS FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS '-' FOUR_HEX_DIGITS FOUR_HEX_DIGITS FOUR_HEX_DIGITS;
 
 terminal COMMENT	: '(*' -> '*)';
 terminal ML_COMMENT	: '/*' -> '*/';

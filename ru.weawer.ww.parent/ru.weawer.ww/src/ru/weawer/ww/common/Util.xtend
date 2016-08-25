@@ -8,7 +8,6 @@ import ru.weawer.ww.wwDsl.Element
 import ru.weawer.ww.wwDsl.EnumType
 import ru.weawer.ww.wwDsl.Field
 import ru.weawer.ww.wwDsl.Package
-import ru.weawer.ww.wwDsl.SettingsContainer
 import ru.weawer.ww.wwDsl.SimpleType
 import ru.weawer.ww.wwDsl.Struct
 import ru.weawer.ww.wwDsl.StructField
@@ -29,30 +28,30 @@ public class Util {
 		return t.fields.map[^val].filter[it != 0].size > 0
 	}
 	
-	def public static List<Struct> getSettings(SettingsContainer c) {
-		val List<Struct> structs = Lists::newArrayList();
-		structs.addAll(c.fields.filter[ref != null].map[ref].toList);
-		structs.addAll(c.fields.filter[field != null].map[field].toList);
-		if(c.fieldsExpr != null) {
-			structs.addAll(
-				c.fieldsExpr
-				.map[ ex |
-					ex.packages
-					.map[element] // take all contents of packages
-					.flatten // make single list from list of lists
-					.toSet // remove duplicates
-					.filter[it instanceof Struct]  // take only elements of type Struct
-					.filter[(it as Struct).type.equals("setting")] // take only 'setting'
-					.map[it as TaggableElement]   // cast to TaggableElement
-					.filterByTag(ex.tags)       // filter by tags specified in filterExpr
-				]
-				.flatten
-				.map[it as Struct]
-				.toSet
-			)
-		}
-		return structs;
-	}
+//	def public static List<Struct> getSettings(SettingsContainer c) {
+//		val List<Struct> structs = Lists::newArrayList();
+//		structs.addAll(c.fields.filter[ref != null].map[ref].toList);
+//		structs.addAll(c.fields.filter[field != null].map[field].toList);
+//		if(c.fieldsExpr != null) {
+//			structs.addAll(
+//				c.fieldsExpr
+//				.map[ ex |
+//					ex.packages
+//					.map[element] // take all contents of packages
+//					.flatten // make single list from list of lists
+//					.toSet // remove duplicates
+//					.filter[it instanceof Struct]  // take only elements of type Struct
+//					.filter[(it as Struct).type.equals("setting")] // take only 'setting'
+//					.map[it as TaggableElement]   // cast to TaggableElement
+//					.filterByTag(ex.tags)       // filter by tags specified in filterExpr
+//				]
+//				.flatten
+//				.map[it as Struct]
+//				.toSet
+//			)
+//		}
+//		return structs;
+//	}
 	
 	def public static List<Field> getStructFields(Struct c) {
 		val List<Field> fields = Lists::newArrayList();
@@ -113,10 +112,6 @@ public class Util {
 	
 	def public static String getLongname(EnumType t) {
 		return getFullname(t).replaceAll("\\.", "_")
-	}
-	
-	def public static String getFullname(SettingsContainer t) {
-		return (t.eContainer as Package).name + "." + t.name 
 	}
 	
 	def public static boolean hasTag(TaggableElement e, String tagName) {

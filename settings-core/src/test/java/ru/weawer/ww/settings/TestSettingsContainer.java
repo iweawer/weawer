@@ -6,13 +6,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Sets;
+
 public class TestSettingsContainer {
 
 	private SettingsContainer settingsContainer;
 	
 	@Before
 	public void setUp() throws Exception {
-		settingsContainer = new SettingsContainer();
+		settingsContainer = new SettingsContainer(Sets.newHashSet());
 	}
 
 	@After

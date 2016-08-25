@@ -60,6 +60,7 @@
     <genClasses ecoreClass="WwDsl.ecore#//Tag">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Tag/name"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Tag/hasValue"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Tag/tags"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Tag/comment"/>
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//TagWithValue">
@@ -94,16 +95,6 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//FilterExpression/elemType"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//FilterExpression/packages"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//FilterExpression/tags"/>
-    </genClasses>
-    <genClasses ecoreClass="WwDsl.ecore#//SettingsContainer">
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//SettingsContainer/name"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//SettingsContainer/comment"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//SettingsContainer/fields"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//SettingsContainer/fieldsExpr"/>
-    </genClasses>
-    <genClasses ecoreClass="WwDsl.ecore#//Setting">
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Setting/ref"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Setting/field"/>
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//ValueExpression">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//ValueExpression/s"/>

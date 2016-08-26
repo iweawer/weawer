@@ -71,7 +71,8 @@ Type:
 Struct:
 	type=('struct'|'setting') name=ID ('[' tags+=TagWithValue+ ']')? '{'
 		(comment=COMMENT)?
-		('keys' keys+=[Field | QualifiedName]+)?
+		((single?='single') |
+		('keys' keys+=[Field | QualifiedName]+))?
 		(mutable?='mutable')?
 		fields+=StructField*
 		fieldsExpr+=FilterExpression*

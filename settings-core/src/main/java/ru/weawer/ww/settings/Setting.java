@@ -9,6 +9,8 @@ package ru.weawer.ww.settings;
  */
 public interface Setting {
 	
+	public static final String SYS_KEY_SEPARATOR = ".";
+	
 	String shortSettingName();
 	String settingName();
 	String sysKey();

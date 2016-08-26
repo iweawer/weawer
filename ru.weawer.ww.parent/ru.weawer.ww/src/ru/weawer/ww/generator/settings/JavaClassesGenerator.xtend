@@ -81,9 +81,17 @@ public class JavaClassesGenerator {
 						this.updateTS = updateTS;
 					}
 				«ENDIF»
-				«IF struct.keys == null || struct.keys.size == 0»
+				«IF struct.single»
 					private «struct.name»() {
-						sysKey = null;
+						«IF struct.type == "setting"»
+							sysKey = "«struct.fullname»";
+						«ENDIF»
+					}
+				«ELSEIF struct.keys == null || struct.keys.size == 0»
+					private «struct.name»() {
+						«IF struct.type == "setting"»
+							sysKey = null;
+						«ENDIF»
 					}
 				«ELSE»
 					private «struct.name»(«struct.keys.map[type.toJavaType + " " + name].join(", ")») {
@@ -142,75 +150,76 @@ public class JavaClassesGenerator {
 				}
 				
 				«IF struct.type == "setting"»
-					@Override
-					public Object fieldValue(String fieldName) {
-						try {
-							return fieldValue(Field.valueOf(fieldName));
-						} catch(RuntimeException e) {
-							// TODO iweawer: do we need to do anything here?
-						}
-						return null;
-					}
+«««					@Override
+«««					public Object fieldValue(String fieldName) {
+«««						try {
+«««							return fieldValue(Field.valueOf(fieldName));
+«««						} catch(RuntimeException e) {
+«««							// TODO iweawer: do we need to do anything here?
+«««						}
+«««						return null;
+«««					}
+«««					
+«««					@Override
+«««					public Object [] fieldValues() {
+«««						return new Object[] {
+«««							«struct.structFields.map[name + "()"].join(", ")»
+«««						};
+«««					}
+«««					
+«««					@Override
+«««					public Map<String, Object> fieldValuesAsMap() {
+«««						return ImmutableMap.<String, Object> builder()
+«««							«struct.structFields.map['''.put("«name»", «name»())'''].join("\n")».build();
+«««					}
 					
 					@Override
-					public Object [] fieldValues() {
-						return new Object[] {
-							«struct.structFields.map[name + "()"].join(", ")»
-						};
-					}
-					
-					@Override
-					public Map<String, Object> fieldValuesAsMap() {
-						return ImmutableMap.<String, Object> builder()
-							«struct.structFields.map['''.put("«name»", «name»())'''].join("\n")».build();
-					}
-					
-					@Override
-					public String settingName() {
+					public String shortSettingName() {
 						return "«struct.name»";
 					}
 					
 					@Override
-					public String fullSettingName() {
+					public String settingName() {
 						return "«struct.fullname»";
 					}
 					
-					@Override
-					public Iterable<SettingField> fields() {
-						Set<SettingField> fields = Sets.newHashSet();
-						«FOR field : struct.structFields»
-						fields.add(new SettingField("«struct.fullname»", sysKey, "«field.name»", «saveToDb(field)»));
-						«ENDFOR»
-						return fields;
+«««					@Override
+«««					public Iterable<SettingField> fields() {
+«««						Set<SettingField> fields = Sets.newHashSet();
+«««						«FOR field : struct.structFields»
+«««						fields.add(new SettingField("«struct.fullname»", sysKey, "«field.name»", «saveToDb(field)»));
+«««						«ENDFOR»
+«««						return fields;
+«««					}
+«««					
+				
+					public String sysKey() {
+						return sysKey;
 					}
-					
+				
+					@SuppressWarnings("unchecked")
+					public «struct.name» update(«struct.name» s, boolean checkKey, boolean updateKey) {
+						if(checkKey && !sysKey().equals(s.sysKey())) {
+							logger.error("Setting key mismatch: " + sysKey() + " != " + s.sysKey());
+							return this;
+						}
+						Builder b = copy();
+						b.updateTS(s.updateTS());
+						if(updateKey) {
+							«FOR f : struct.structFields.filter[isKey(struct)]»
+								b.«f.name»(s.«f.name»());						
+							«ENDFOR»
+						}
+						«FOR f : struct.structFields.filter[!isKey(struct)]»
+							b.«f.name»(s.«f.name»());						
+						«ENDFOR»
+						return b.build();
+					}
 				«ENDIF»
-				public String sysKey() {
-					return sysKey;
-				}
 				
 				public Builder copy() {
 					return builder()
 					«struct.structFields.map['''.«name»(«name»)'''].join("\n")»;
-				}
-				
-				@SuppressWarnings("unchecked")
-				public «struct.name» update(«struct.name» s, boolean checkKey, boolean updateKey) {
-					if(checkKey && !sysKey().equals(s.sysKey())) {
-						logger.error("Setting key mismatch: " + sysKey() + " != " + s.sysKey());
-						return this;
-					}
-					Builder b = copy();
-					b.updateTS(s.updateTS());
-					if(updateKey) {
-						«FOR f : struct.structFields.filter[isKey(struct)]»
-							b.«f.name»(s.«f.name»());						
-						«ENDFOR»
-					}
-					«FOR f : struct.structFields.filter[!isKey(struct)]»
-						b.«f.name»(s.«f.name»());						
-					«ENDFOR»
-					return b.build();
 				}
 				
 				public static Builder builder() {
@@ -223,13 +232,14 @@ public class JavaClassesGenerator {
 							this.«field.name» = «getJavaDefaultValue(field)»;
 						«ENDFOR»
 					}
-					
-					private long updateTS;
-					
-					public Builder updateTS(long updateTS) {
-						this.updateTS = updateTS;
-						return this;
-					}
+					«IF struct.type == "setting"»
+						private long updateTS;
+						
+						public Builder updateTS(long updateTS) {
+							this.updateTS = updateTS;
+							return this;
+						}
+					«ENDIF»
 					
 					«FOR field : struct.structFields»
 						// «field.comment»
@@ -422,7 +432,7 @@ public class JavaClassesGenerator {
 				"Long.parseLong(" + objName + ")"
 			}
 			case BYTEARRAY: {
-				objName + ".getBytes(charset)"
+				"(" + objName + ").getBytes(charset)"
 			}
 		}
 	}

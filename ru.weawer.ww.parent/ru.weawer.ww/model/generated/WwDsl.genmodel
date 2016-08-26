@@ -83,6 +83,7 @@
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//Struct">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Struct/type"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Struct/single"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/keys"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/fields"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/fieldsExpr"/>

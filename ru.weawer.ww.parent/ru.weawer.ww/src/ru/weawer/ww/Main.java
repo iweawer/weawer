@@ -34,9 +34,12 @@ import ru.weawer.ww.generator.settings.JavaClassesGenerator;
  */
 public class Main {
 
+	public static final String OUTPUT_DIR = "outputDir";
+	
 	private static final String LANG_PROPERTY = "lang";
 	private static final String GENERATORS_PROPERTY = "generators";
 	private static final String PACKAGES_PROPERTY = "packages";
+	private static final String OUTPUT_DIR_PROPERTY = "outputDir";
 	
 	public static void main(String[] args) {
 		try {
@@ -55,6 +58,13 @@ public class Main {
 			return;
 		}
 		List<String> packages = Arrays.asList(packProp.split(","));
+		
+		// Loading output dir
+		String outputDir = System.getProperty(OUTPUT_DIR_PROPERTY);
+		if(outputDir == null || "".equals(outputDir)) {
+			System.err.println("No output dir specified. Please provide it in form -DoutputDir=dirname");
+			return;
+		}
 		
 		Injector injector = new WwDslStandaloneSetupGenerated().createInjectorAndDoEMFRegistration();
 		Main main = injector.getInstance(Main.class);
@@ -80,9 +90,10 @@ public class Main {
 		}
 		List<URL> urls = new ClasspathFileFinder().findFilesInClassPath(".*ww");
 		System.out.println("URLs: " + urls);
+		System.out.println("Output dir: " + outputDir);
 //		System.out.println("Path to crsdsl files: " + args[0]);
 //		System.out.println("List of files: " + Arrays.asList(new File(args[0]).list()));
-		main.runGenerator(languages, packages, urls);
+		main.runGenerator(languages, packages, urls, outputDir);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -100,7 +111,7 @@ public class Main {
 	@Inject 
 	private JavaIoFileSystemAccess fsa;
 
-	protected void runGenerator(List<String> languages, List<String> packages, List<URL> files) throws URISyntaxException {
+	protected void runGenerator(List<String> languages, List<String> packages, List<URL> files, String outputDir) throws URISyntaxException {
 		// load the resource
 		ResourceSet set = resourceSetProvider.get();
 		for(URL url : files) {
@@ -122,7 +133,7 @@ public class Main {
 		
 		
 		// configure and start the generator
-		fsa.setOutputPath("src-gen/");
+		fsa.setOutputPath(outputDir);
 		generator.doGenerate(languages, packages, set, fsa);	
 		System.out.println("Code generation completed");
 	}

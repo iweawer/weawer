@@ -1,12 +1,11 @@
 package ru.weawer.ww.common
 
+import ru.weawer.ww.wwDsl.EnumType
 import ru.weawer.ww.wwDsl.List
 import ru.weawer.ww.wwDsl.Map
 import ru.weawer.ww.wwDsl.SimpleType
-
 import ru.weawer.ww.wwDsl.Struct
 import ru.weawer.ww.wwDsl.Type
-import ru.weawer.ww.wwDsl.EnumType
 
 public class TypeUtil {
 	
@@ -173,7 +172,7 @@ public class TypeUtil {
 	
 	def private static String javaToJson(Type type, String name, int count) {
 		if(isSimple(type)) {
-			return '''"\"" + String.valueOf(«name») + "\""''';
+			return simpleTypeToJson(type, name);
 		} else if(isEnum(type)) {
 			return '''"\"" + «name».name() + "\""''';
 		} else if(isMap(type)) {
@@ -184,6 +183,66 @@ public class TypeUtil {
 			return '''JSONStructSerializer.toJson(«name»)'''
 		}
 		return null;
+	}
+	
+	def private static String simpleTypeToJson(Type type, String name) {
+		switch(type.simple) {
+			case SimpleType.BOOLEAN: return name
+			case SimpleType.BYTE: return name
+			case SimpleType.CHAR: return '''"\"" + String.valueOf(«name») + "\""'''
+			case SimpleType.SHORT: return name
+			case SimpleType.INT: return name
+			case SimpleType.LONG: return name
+			case SimpleType.FLOAT: return name
+			case SimpleType.DOUBLE: return name
+			case SimpleType.STRING: return '''"\"" + «name» + "\""'''
+			case SimpleType.DATE: return '''"\"" + String.valueOf(«name») + "\""'''
+			case SimpleType.TIME: return '''"\"" + String.valueOf(«name») + "\""'''
+			case SimpleType.DATETIME: return '''"\"" + String.valueOf(«name») + "\""'''
+			case SimpleType.TIMESTAMP: return name
+			case SimpleType.GUID: return '''"\"" + String.valueOf(«name») + "\""'''
+			case SimpleType.BYTEARRAY: return '''"\"" + Arrays.toString(«name») + "\""'''
+		}
+	}
+	
+	def public static String hashCode(Type type, String name) {
+		switch(type.simple) {
+			case SimpleType.BOOLEAN: return "(" + name + " ? 1 : 0)"
+			case SimpleType.BYTE: return name
+			case SimpleType.CHAR: return "(int) " + name
+			case SimpleType.SHORT: return name
+			case SimpleType.INT: return name
+			case SimpleType.LONG: return "(int) " + name
+			case SimpleType.FLOAT: return "(int) " + name
+			case SimpleType.DOUBLE: return "(int) " + name
+			case SimpleType.STRING: return name + ".hashCode()"
+			case SimpleType.DATE: return name + ".hashCode()"
+			case SimpleType.TIME: return name + ".hashCode()"
+			case SimpleType.DATETIME: return name + ".hashCode()"
+			case SimpleType.TIMESTAMP: return "(int) " + name
+			case SimpleType.GUID: return name + ".hashCode()"
+			case SimpleType.BYTEARRAY: return "Arrays.toString(" + name + ").hashCode()"
+		}
+	}
+	
+	def public static String equals(Type type, String name) {
+		switch(type.simple) {
+			case SimpleType.BOOLEAN: '''this.«name»() == that.«name»()'''
+			case SimpleType.BYTE: return '''this.«name»() == that.«name»()'''
+			case SimpleType.CHAR: return '''this.«name»() == that.«name»()'''
+			case SimpleType.SHORT: return '''this.«name»() == that.«name»()'''
+			case SimpleType.INT: return '''this.«name»() == that.«name»()'''
+			case SimpleType.LONG: return '''this.«name»() == that.«name»()'''
+			case SimpleType.FLOAT: return '''this.«name»() == that.«name»()'''
+			case SimpleType.DOUBLE: return '''this.«name»() == that.«name»()'''
+			case SimpleType.STRING: return '''this.«name»().equals(that.«name»())'''
+			case SimpleType.DATE: return '''this.«name»().equals(that.«name»())'''
+			case SimpleType.TIME: return '''this.«name»().equals(that.«name»())'''
+			case SimpleType.DATETIME: return '''this.«name»().equals(that.«name»())'''
+			case SimpleType.TIMESTAMP: return '''this.«name»() == that.«name»()'''
+			case SimpleType.GUID: return '''this.«name»().equals(that.«name»())'''
+			case SimpleType.BYTEARRAY: return '''Arrays.equals(this.«name»(), that.«name»())'''
+		}
 	}
 	
 	def public static print(Type t) {

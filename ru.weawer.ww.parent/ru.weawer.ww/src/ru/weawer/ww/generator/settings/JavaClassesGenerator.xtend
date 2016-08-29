@@ -16,6 +16,7 @@ import ru.weawer.ww.wwDsl.Type
 
 import static extension ru.weawer.ww.common.TypeUtil.*
 import static extension ru.weawer.ww.common.Util.*
+import ru.weawer.ww.common.TypeUtil
 
 @Singleton
 public class JavaClassesGenerator {
@@ -55,7 +56,7 @@ public class JavaClassesGenerator {
 			«IF struct.comment != null»
 			// «struct.comment»
 			«ENDIF»
-			public class «struct.name»	implements Struct«IF struct.type=='setting'», Setting«ENDIF» {
+			public class «struct.name» implements Struct«IF struct.type=='setting'», Setting«ENDIF» {
 				
 				private static final Logger logger = LogManager.getLogger();
 				private static final Charset charset = Charset.forName("UTF-8");
@@ -68,6 +69,8 @@ public class JavaClassesGenerator {
 						struct.structFields.filter[nullable].size / 8 + 1 
 						else 
 						struct.structFields.filter[nullable].size / 8»; 
+				
+				private int hashcode;
 				
 				«IF struct.type == "setting"»
 					private final String sysKey;
@@ -107,20 +110,6 @@ public class JavaClassesGenerator {
 						sysKey = «struct.keys.map['''String.valueOf(«name»)'''].join(" + SYS_KEY_SEPARATOR + ")»;
 					}
 				«ENDIF»
-«««				«IF setting.structFields.size > 0 && setting.structFields.filter[!isKey(setting)].size > 0»
-«««					public «setting.name»(«setting.structFields.map[type.toJavaType + " " + name].join(", ")») {
-«««						«FOR f : setting.structFields»
-«««							this.«f.name» = «f.name»;
-«««						«ENDFOR»
-«««						«IF setting.keys.size > 0»
-«««							sysKey = «setting.keys.map['''String.valueOf(«name»)'''].join(" + SYS_KEY_SEPARATOR + ")»;
-«««						«ELSEIF setting.single»
-«««							sysKey = "«setting.name»";
-«««						«ELSE»
-«««							sysKey = null;
-«««						«ENDIF»
-«««					}
-«««				«ENDIF»
 
 				«FOR field : struct.structFields»
 					// «field.comment»
@@ -131,7 +120,7 @@ public class JavaClassesGenerator {
 					}
 					«IF !field.isKey(struct) && (field.mutable || struct.mutable)»
 						public «struct.name» «field.name»(«field.type.toJavaType» «field.name») {
-							«IF !field.nullable && !field.isSimpleType»
+							«IF !field.nullable && !field.type.isJavaSimpleType»
 								Preconditions.checkArgument(«field.name» != null, "Field «field.name» is null");
 							«ENDIF»
 							this.«field.name» = «field.name»;
@@ -139,39 +128,8 @@ public class JavaClassesGenerator {
 						}
 					«ENDIF»
 				«ENDFOR»
-				public Object fieldValue(Field f) {
-					switch(f) {
-						«FOR f : struct.structFields»
-						case «f.name»:
-							return «f.name»();
-						«ENDFOR»
-					}
-					return null;
-				}
-				
+
 				«IF struct.type == "setting"»
-«««					@Override
-«««					public Object fieldValue(String fieldName) {
-«««						try {
-«««							return fieldValue(Field.valueOf(fieldName));
-«««						} catch(RuntimeException e) {
-«««							// TODO iweawer: do we need to do anything here?
-«««						}
-«««						return null;
-«««					}
-«««					
-«««					@Override
-«««					public Object [] fieldValues() {
-«««						return new Object[] {
-«««							«struct.structFields.map[name + "()"].join(", ")»
-«««						};
-«««					}
-«««					
-«««					@Override
-«««					public Map<String, Object> fieldValuesAsMap() {
-«««						return ImmutableMap.<String, Object> builder()
-«««							«struct.structFields.map['''.put("«name»", «name»())'''].join("\n")».build();
-«««					}
 					
 					@Override
 					public String shortSettingName() {
@@ -183,20 +141,11 @@ public class JavaClassesGenerator {
 						return "«struct.fullname»";
 					}
 					
-«««					@Override
-«««					public Iterable<SettingField> fields() {
-«««						Set<SettingField> fields = Sets.newHashSet();
-«««						«FOR field : struct.structFields»
-«««						fields.add(new SettingField("«struct.fullname»", sysKey, "«field.name»", «saveToDb(field)»));
-«««						«ENDFOR»
-«««						return fields;
-«««					}
-«««					
-				
+					@Override
 					public String sysKey() {
 						return sysKey;
 					}
-				
+
 					@SuppressWarnings("unchecked")
 					public «struct.name» update(«struct.name» s, boolean checkKey, boolean updateKey) {
 						if(checkKey && !sysKey().equals(s.sysKey())) {
@@ -216,6 +165,49 @@ public class JavaClassesGenerator {
 						return b.build();
 					}
 				«ENDIF»
+
+				private void calculateHashCode() {
+					int hashCode = 0;
+					«FOR f : struct.structFields»
+						«IF isSimple(f.type)»							
+							hashCode = hashCode * 37 + «f.type.hashCode(f.name)»;
+						«ELSE»
+							hashCode = hashCode * 37 + «f.name».hashCode();
+						«ENDIF»
+					«ENDFOR»
+					hashcode = hashCode;
+				}
+				
+				@Override
+				public int hashCode() {
+					«IF struct.mutable || struct.structFields.filter[mutable].size > 0»
+						return calculateHashCode();
+					«ELSE»
+						return hashcode;
+					«ENDIF»
+				}
+				
+				@Override
+				public boolean equals(Object o) {
+					if(o instanceof «struct.name») {
+						«struct.name» that = («struct.name») o;
+						«FOR f : struct.structFields»
+							«IF isSimple(f.type)»	
+								«IF !f.type.isJavaSimpleType && f.nullable»
+									if( (this.«f.name»() != null && that.«f.name»() == null) || 
+										(this.«f.name»() == null && that.«f.name»() != null) ||
+										(this.«f.name»() != null && !this.«f.name»().equals(that.«f.name»())) return false;
+								«ELSE»						
+									if(! («TypeUtil.equals(f.type, f.name)»)) return false;
+								«ENDIF»
+							«ELSE»
+								if(!this.«f.name»().equals(that.«f.name»())) return false;
+							«ENDIF»
+						«ENDFOR»
+						return true;
+					}
+					return false;
+				}
 				
 				public Builder copy() {
 					return builder()
@@ -272,6 +264,7 @@ public class JavaClassesGenerator {
 						«IF struct.type == "setting"»
 							r.updateTS(updateTS);
 						«ENDIF»
+						r.calculateHashCode();
 						return r;
 					}
 					

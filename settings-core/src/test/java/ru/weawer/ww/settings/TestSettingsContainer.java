@@ -2,11 +2,16 @@ package ru.weawer.ww.settings;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
+
+import ru.weawer.ww.struct.Struct;
 
 public class TestSettingsContainer {
 
@@ -23,7 +28,11 @@ public class TestSettingsContainer {
 
 	@Test
 	public void test() {
-		assertNotNull(settingsContainer);
+		byte [] b = new byte[]{0x00, 0x01, 0x7F};
+		System.out.println(Arrays.toString(b));
+		
+		byte [] b1 = Struct.byteArrayFromString(Arrays.toString(b));
+		System.out.println(Arrays.toString(b1));
 	}
 
 }

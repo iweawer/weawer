@@ -33,7 +33,6 @@
     <genClasses ecoreClass="WwDsl.ecore#//Element"/>
     <genClasses ecoreClass="WwDsl.ecore#//TaggableElement">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//TaggableElement/name"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//TaggableElement/mutable"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//TaggableElement/tags"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//TaggableElement/comment"/>
     </genClasses>
@@ -43,6 +42,7 @@
     <genClasses ecoreClass="WwDsl.ecore#//Field">
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Field/type"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Field/nullable"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Field/mutable"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Field/label"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Field/default"/>
     </genClasses>
@@ -58,10 +58,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//EnumField/comment"/>
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//Tag">
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Tag/name"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Tag/hasValue"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Tag/tags"/>
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Tag/comment"/>
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//TagWithValue">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//TagWithValue/tag"/>
@@ -85,6 +82,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Struct/type"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Struct/single"/>
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/keys"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Struct/mutable"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/fields"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/fieldsExpr"/>
     </genClasses>

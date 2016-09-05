@@ -2,10 +2,12 @@ package ru.weawer.ww.sett {
 	
 	tag TENV (* environment tag *)
 	tag TPROD [ TENV ] (* production environment *)
-	tag TDEV  [ TENV ]
+	tag TDEV  [ TENV TTAG ]
 	tag TTAG
 	tag Simple
 	tag Complex
+	
+	tag Str
 	
 	enum En1 {
 		ONE
@@ -34,17 +36,17 @@ package ru.weawer.ww.sett {
 	
 	
 	
-	struct MyStr1 {
+	struct MyStr1 [Str] {
 		field long lo
 		field list<map<date, boolean>> li
 	}
 	
-	struct MyStr2 {
+	struct MyStr2 [Str] {
 		field string s
 		field MyStr1 s1
 	}
 	
-	setting ComplexTypes [ TDEV Complex ] {
+	setting ComplexTypes [ TDEV TTAG Complex ] {
 		field list<string> listString
 		field map<int, string> listIntString
 		field map<double, list<En1>> m

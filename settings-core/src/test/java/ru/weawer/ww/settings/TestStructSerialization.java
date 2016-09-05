@@ -7,15 +7,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Bytes;
 
 import ru.weawer.ww.JSONStructSerializer;
 import ru.weawer.ww.sett.En1;
@@ -173,5 +177,19 @@ public class TestStructSerialization {
 		return MyStr2.builder().s("id").s1(getMyStr1()).build();
 	}
 
+	public static void main(String[] args) {
+		
+		int [] a = new int[] { 128, 2, 3 };
+		// Ну раз пост про ФП, то можно так: (Bytes - это com.google.common.primitives.Bytes из google-guava
+		byte [] b = Bytes.toArray(IntStream.of(a).boxed().collect(Collectors.toList()));
+		System.out.println(Arrays.toString(b));
+		
+		
+		// Если по сети передавать, то ByteBuffer удобнейшая штука
+		byte [] b1 = new byte[a.length * 4];
+		ByteBuffer buf = ByteBuffer.wrap(b1);
+		IntStream.of(a).forEach(i -> buf.putInt(i));		
+		System.out.println(Arrays.toString(b1));
+	}
 
 }

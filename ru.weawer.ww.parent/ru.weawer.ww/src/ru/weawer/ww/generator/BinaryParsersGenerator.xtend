@@ -49,6 +49,10 @@ public class BinaryParsersGenerator {
 				return buf.get() > 0 ? true : false;
 			}
 			
+			public static final void addsize_boolean(AtomicInteger size, boolean b) {
+				size.addAndGet(1);
+			}
+			
 			/* byte */
 			public static final void writebyte(ByteBuffer buf, byte b) {
 				buf.put(b);
@@ -56,6 +60,10 @@ public class BinaryParsersGenerator {
 			
 			public static final byte readbyte(ByteBuffer buf) {
 				return buf.get();
+			}
+			
+			public static final void addsize_byte(AtomicInteger size, byte b) {
+				size.addAndGet(1);
 			}
 			
 			/* char */
@@ -69,6 +77,10 @@ public class BinaryParsersGenerator {
 				return buf.getChar();
 			}
 			
+			public static final void addsize_char(AtomicInteger size, char b) {
+				size.addAndGet(2);
+			}
+			
 			/* short */
 			public static final void writeshort(ByteBuffer buf, short i) {
 				buf.putShort(i);
@@ -76,6 +88,10 @@ public class BinaryParsersGenerator {
 			
 			public static final short readshort(ByteBuffer buf) {
 				return buf.getShort();
+			}
+			
+			public static final void addsize_short(AtomicInteger size, short b) {
+				size.addAndGet(2);
 			}
 			
 			/* int */
@@ -87,6 +103,10 @@ public class BinaryParsersGenerator {
 				return buf.getInt();
 			}
 			
+			public static final void addsize_int(AtomicInteger size, int b) {
+				size.addAndGet(4);
+			}
+			
 			/* long */
 			public static final void writelong(ByteBuffer buf, long l) {
 				buf.putLong(l);
@@ -94,6 +114,10 @@ public class BinaryParsersGenerator {
 			
 			public static final long readlong(ByteBuffer buf) {
 				return buf.getLong();
+			}
+			
+			public static final void addsize_long(AtomicInteger size, long b) {
+				size.addAndGet(8);
 			}
 			
 			/* float */
@@ -105,6 +129,10 @@ public class BinaryParsersGenerator {
 				return buf.getFloat();
 			}
 			
+			public static final void addsize_float(AtomicInteger size, float b) {
+				size.addAndGet(4);
+			}
+			
 			/* double */
 			public static final void writedouble(ByteBuffer buf, double d) {
 				buf.putDouble(d);
@@ -112,6 +140,10 @@ public class BinaryParsersGenerator {
 			
 			public static final double readdouble(ByteBuffer buf) {
 				return buf.getDouble();
+			}
+			
+			public static final void addsize_double(AtomicInteger size, double b) {
+				size.addAndGet(8);
 			}
 			
 			public static final void writestring(ByteBuffer buf, String s) {
@@ -126,6 +158,10 @@ public class BinaryParsersGenerator {
 				byte [] b = new byte[__size];
 				buf.get(b);
 				return new String(b, charset);
+			}
+			
+			public static final void addsize_string(AtomicInteger size, String b) {
+				size.addAndGet(b.getBytes(charset).length);
 			}
 			
 			// date|time|datetime|timestamp|guid
@@ -145,6 +181,10 @@ public class BinaryParsersGenerator {
 				return LocalDate.parse(new String(b));
 			}
 			
+			public static final void addsize_date(AtomicInteger size, LocalDate b) {
+				size.addAndGet(b.toString().getBytes().length);
+			}
+			
 			/* time */
 			public static final void writetime(ByteBuffer buf, LocalTime s) {
 				byte [] b = s.toString().getBytes();
@@ -158,6 +198,10 @@ public class BinaryParsersGenerator {
 				byte [] b = new byte[__size];
 				buf.get(b);
 				return LocalTime.parse(new String(b));
+			}
+			
+			public static final void addsize_time(AtomicInteger size, LocalTime b) {
+				size.addAndGet(b.toString().getBytes().length);
 			}
 			
 			/* datetime */
@@ -175,6 +219,10 @@ public class BinaryParsersGenerator {
 				return LocalDateTime.parse(new String(b));
 			}
 			
+			public static final void addsize_datetime(AtomicInteger size, LocalDateTime b) {
+				size.addAndGet(b.toString().getBytes().length);
+			}
+			
 			/* timestamp */
 			public static final void writetimestamp(ByteBuffer buf, long l) {
 				buf.putLong(l);
@@ -182,6 +230,10 @@ public class BinaryParsersGenerator {
 			
 			public static final long readtimestamp(ByteBuffer buf) {
 				return buf.getLong();
+			}
+			
+			public static final void addsize_timestamp(AtomicInteger size, long b) {
+				size.addAndGet(8);
 			}
 			
 			/* guid */
@@ -197,6 +249,10 @@ public class BinaryParsersGenerator {
 				byte [] b = new byte[__size];
 				buf.get(b);
 				return java.util.UUID.fromString(new String(b));
+			}
+			
+			public static final void addsize_datetime(AtomicInteger size, java.util.UUID b) {
+				size.addAndGet(b.toString().getBytes().length);
 			}		
 			
 			/* bytearray */
@@ -213,7 +269,9 @@ public class BinaryParsersGenerator {
 				return b;
 			}
 			
-
+			public static final void addsize_datetime(AtomicInteger size, byte [] b) {
+				size.addAndGet(b.length);
+			}
 			
 			private static final ImmutableMap<Class<? extends Struct>, Function<ByteBuffer, ? extends Struct>> parsers;
 
@@ -227,8 +285,7 @@ public class BinaryParsersGenerator {
 				return parsers.get(clazz);
 			}
 			
-			«getListMapFunctions(packages, resource, fsa)»
-		
+			«getListMapFunctions(packages, resource, fsa)»		
 		}
 		'''
 		fsa.generateFile("java/ru/weawer/ww/BinaryParser.java", output);
@@ -274,6 +331,15 @@ public class BinaryParsersGenerator {
 			}
 			return m;
 		}
+		
+		public static void addsize_«m.toName»(AtomicInteger size, «m.toJavaType» m) {
+			addsize_string(size, "«m.toName»");
+			addsize_int(size, 0); // map size
+			for(Map.Entry<«m.key.toJavaObjectType», «m.value.toJavaObjectType»> e : m.entrySet()) {
+				addsize_«m.key.toName»(size, e.getKey());
+				addsize_«m.value.toName»(size, e.getValue());
+			}
+		}
 		'''
 		if(isMap(m.key)) {
 			putFunctionFor(m.key.map, f)
@@ -317,6 +383,14 @@ public class BinaryParsersGenerator {
 			}
 			return m;
 		}
+		
+		public static void addsize_«l.toName»(AtomicInteger size, «l.toJavaType» l) {
+			addsize_string(size, "«l.toName»");
+			addsize_int(size, 0); // list size
+			for(«l.elem.toJavaType» t : l) {
+				addsize_«l.elem.toName»(size, t);
+			}
+		}
 		'''
 		if(isMap(l.elem)) {
 			putFunctionFor(l.elem.map, f)
@@ -339,6 +413,10 @@ public class BinaryParsersGenerator {
 		public static «d.fullname» read«d.longname»(ByteBuffer buf) {
 			return «d.name».fromByteArray(buf);
 		}
+		
+		public static void addsize_«d.longname»(AtomicInteger size, «d.fullname» d) {
+			size.addAndGet(d.getByteSize());
+		}
 		'''
 		f.put(d.fullname, func);
 	}
@@ -351,6 +429,10 @@ public class BinaryParsersGenerator {
 		
 		public static «e.name» read«e.longname»(ByteBuffer buf) {
 			return «e.name».fromVal(readint(buf));
+		}
+		
+		public static void addsize_«e.longname»(AtomicInteger size, «e.name» d) {
+			size.addAndGet(4);
 		}
 		'''
 		f.put(e.fullname, func);

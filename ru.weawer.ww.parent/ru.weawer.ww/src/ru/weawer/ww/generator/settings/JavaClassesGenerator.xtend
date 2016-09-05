@@ -41,12 +41,15 @@ public class JavaClassesGenerator {
 			import java.nio.charset.Charset;
 			import java.io.*;
 			import java.nio.*;
+			import java.util.concurrent.atomic.AtomicInteger;
+			
 			import org.json.simple.*;
 			import com.google.common.base.*;
 			import com.google.common.collect.*;
 			import org.apache.logging.log4j.LogManager;
 			import org.apache.logging.log4j.Logger;
 			import ru.weawer.ww.JSONStructSerializer;
+			import ru.weawer.ww.BinaryStructSerializer;
 			import ru.weawer.ww.BinaryParser;
 			import ru.weawer.ww.struct.Struct;
 			«IF struct.type == "setting"»
@@ -65,10 +68,6 @@ public class JavaClassesGenerator {
 					«struct.structFields.map[name].join(",\n")»
 				}
 				
-				private static final int BITMASK_LENGTH = «if(struct.structFields.filter[nullable].size % 8 > 0) 
-						struct.structFields.filter[nullable].size / 8 + 1 
-						else 
-						struct.structFields.filter[nullable].size / 8»; 
 				
 				private int hashcode;
 				
@@ -307,68 +306,35 @@ public class JavaClassesGenerator {
 				}
 				
 				public byte [] toByteArray() {
-					ByteBuffer buf = ByteBuffer.allocate(1000000);
-					toByteArray(buf);
-					buf.flip();
-					byte [] b = new byte[buf.limit()];
-					buf.get(b, 0, b.length);
-					return b;
+					return BinaryStructSerializer.toByteArray(this);
 				}
 
 				public void toByteArray(ByteBuffer buf) {
-					final int __length_position = buf.position();
-					buf.position(buf.position() + 4);
-					BinaryParser.writestring(buf, "«struct.longname»");
+					BinaryStructSerializer.toByteArray(this, buf);
+				}
+				
+				@Override
+				public int getByteSize() {
+					AtomicInteger size = new AtomicInteger(0);
+					size.addAndGet(4); // length
+					size.addAndGet("«struct.longname»".getBytes(charset).length); // struct name
 					«IF struct.structFields.filter[nullable].size > 0»
-						final int __bitmap_position = buf.position();
-						byte[] __bitmap = new byte[BITMASK_LENGTH]; 
-						buf.position(__bitmap_position + BITMASK_LENGTH);
-						BitSet bitSet = BitSet.valueOf(__bitmap);						
+						size.addAndGet(BITMASK_LENGTH);
 					«ENDIF»
 					
 					«reset»
 					
 					«FOR field : struct.structFields»
 						«IF isJavaSimpleType(field.type) || !field.isNullable»
-							BinaryParser.write«field.type.toName»(buf, «field.name»);
+							BinaryParser.addsize_«field.type.toName»(size, struct.«field.name»());
 						«ELSE»
-							if(«field.name» == null) {
-								bitSet.set(«k»); 
-							} else {
-								BinaryParser.write«field.type.toName»(buf, «field.name»);
+							if(«field.name» != null) {
+								BinaryParser.addsize_«field.type.toName»(size, struct.«field.name»());
 							}
 						«ENDIF»
 						«increment»
 					«ENDFOR»
-					int __length = buf.position() - __length_position - 4;
-					buf.putInt(__length_position, __length);
-					«IF struct.structFields.filter[nullable].size > 0»
-						__bitmap = bitSet.toByteArray();
-						for(int __i = 0; __i < __bitmap.length; __i++) {
-							buf.put(__bitmap_position + __i, __bitmap[__i]);
-						}
-					«ENDIF»
-				}
-				
-				public static «struct.name» fromByteArray(ByteBuffer buf) {
-					final Builder builder = builder();
-					final int __length = buf.getInt();
-					final String __name = BinaryParser.readstring(buf);
-					«IF struct.structFields.filter[nullable].size > 0» 
-						final byte[] __bitmap = new byte[BITMASK_LENGTH];
-						buf.get(__bitmap);
-						BitSet bitSet = BitSet.valueOf(__bitmap);
-					«ENDIF»
-					«reset()»
-					«FOR field : struct.structFields»
-						«IF isJavaSimpleType(field.type) || !field.isNullable»
-							builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
-						«ELSE»
-							if(!bitSet.get(«k»)) builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
-						«ENDIF»
-						«increment()»
-					«ENDFOR»
-					return builder.build();
+					return size.get();
 				}
 			}
 			'''

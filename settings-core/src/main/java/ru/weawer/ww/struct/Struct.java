@@ -5,8 +5,9 @@ import java.nio.ByteBuffer;
 public interface Struct {
 
 	public String toJson();
-	
 	public void toByteArray(ByteBuffer buf);
+	public byte [] toByteArray();
+	public int getByteSize();
 	
 	public static byte[] byteArrayFromString(String s) {
 		s = s.trim();

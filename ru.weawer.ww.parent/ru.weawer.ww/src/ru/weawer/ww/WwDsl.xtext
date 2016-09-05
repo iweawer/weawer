@@ -18,7 +18,7 @@ Element:
 ;
 
 TaggableElement:
-	Field|Struct|Tag
+	Field|Struct|Tag|Interface
 ;
 
 Import:
@@ -61,7 +61,7 @@ List:
 ;
 
 RefType:
-	EnumType|Struct
+	EnumType|Struct|Interface
 ;
 
 Type:
@@ -69,7 +69,7 @@ Type:
 ;
 
 Struct:
-	type=('struct'|'setting') name=ID ('[' tags+=TagWithValue+ ']')? '{'
+	type=('struct'|'setting') name=ID ('[' tags+=TagWithValue+ ']')? ('implements' implements+=[Interface | QualifiedName]+)? '{'
 		(comment=COMMENT)?
 		((single?='single') |
 		('keys' keys+=[Field | QualifiedName]+))?
@@ -81,6 +81,14 @@ Struct:
 
 StructField:
 	('field' 'ref' '=' ref=[Field | QualifiedName])|(field=Field)
+;
+
+Interface:
+	'interface' name=ID ('[' tags+=TagWithValue+ ']')? '{'
+		(comment=COMMENT)?
+		fields+=StructField*
+		fieldsExpr+=FilterExpression*
+	'}'
 ;
 
 FilterExpression:

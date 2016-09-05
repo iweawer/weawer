@@ -28,52 +28,54 @@ public class BinaryStructSerializer {
 		import java.util.*;
 		import java.util.stream.*;
 		import java.time.*;
-		import org.json.simple.*;
+		import java.nio.ByteBuffer;
 		import com.google.common.base.*;
 		import com.google.common.collect.*;
-		import org.apache.logging.log4j.LogManager;
-		import org.apache.logging.log4j.Logger;
+		import org.slf4j.LoggerFactory;
+		import org.slf4j.Logger;
+		import ru.weawer.ww.struct.Struct;
 		
 		public class BinaryStructSerializer {
 			
-			private static final Logger logger = LogManager.getLogger();
+			private static final Logger logger = LoggerFactory.getLogger(BinaryStructSerializer.class);
 			
-			public static <T> T fromJson(String json, Class<T> clazz) {
-				Preconditions.checkArgument(json != null && !json.isEmpty(), "JSON is empty. Cannot deserialize from it");
+			public static Object fromByteBuf(ByteBuffer buf) {
+				Preconditions.checkArgument(buf != null, "ByteBuffer is null. Cannot deserialize from it");
 				Serializer<T> serializer = (Serializer<T>) serializers.get(clazz);
 				if(serializer == null) {
 					logger.error("Serializer for {} not found", clazz.getName());
 					return null;
 				} else {
-					return serializer.fromJsonObj((JSONObject) JSONValue.parse(json));
+					return serializer.fromByteBuf(buf);
 				}
 			}
 			
-			public static <T> T fromJsonObj(JSONObject json, Class<T> clazz) {
-				Preconditions.checkArgument(json != null && !json.isEmpty(), "JSON is empty. Cannot deserialize from it");
-				Serializer<T> serializer = (Serializer<T>) serializers.get(clazz);
-				if(serializer == null) {
-					logger.error("Serializer for {} not found", clazz.getName());
-					return null;
-				} else {
-					return serializer.fromJsonObj(json);
-				}
-			}
-			
-			public static <T> String toJson(T struct) {
-				Preconditions.checkArgument(struct != null, "Struct is null. Cannot serialize to JSON");
+			public static <T extends Struct> void toByteArray(T struct, ByteBuffer buf) {
+				Preconditions.checkArgument(struct != null, "Struct is null. Cannot serialize to byte array");
 				Serializer<T> serializer = (Serializer<T>) serializers.get(struct.getClass());
 				if(serializer == null) {
 					logger.error("Serializer for {} not found", struct.getClass().getName());
 					return null;
 				} else {
-					return serializer.toJson(struct);
+					return serializer.toByteArray(struct, buf);
 				}
 			}
 			
-			private interface Serializer<T> {
-				public String toJson(T struct);
-				public T fromJsonObj(JSONObject json);
+			public static <T extends Struct> void toByteArray(T struct, ByteBuffer buf) {
+				Preconditions.checkArgument(struct != null, "Struct is null. Cannot serialize to byte array");
+				Serializer<T> serializer = (Serializer<T>) serializers.get(struct.getClass());
+				if(serializer == null) {
+					logger.error("Serializer for {} not found", struct.getClass().getName());
+					return null;
+				} else {
+					return serializer.toByteArray(struct, buf);
+				}
+			}
+			
+			private interface Serializer<T extends Struct> {
+				public void toByteArray(T struct, ByteBuffer buf);
+				public byte [] toByteArray(T struct);
+				public Object fromByteBuf(ByteBuffer buf);
 			}
 			
 			private static final Map<Class<?>, Serializer<?>> serializers = Maps.newHashMap();
@@ -85,39 +87,76 @@ public class BinaryStructSerializer {
 					.toIterable»
 					serializers.put(«struct.fullname».class, new Serializer<«struct.fullname»>() {
 						
-						@Override
-						public String toJson(«struct.fullname» struct) {
-							return "{" +
-								"\"structname\": \"«struct.fullname»\""
-								«FOR field : struct.structFields»
-									«IF field.isNullable»
-									 	+ (struct.«field.name»() != null ? ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()")» : "")
-									«ELSE»
-										+ ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()")»
-									«ENDIF»
-								«ENDFOR»
-							+ "}";
-						}
+						private static final int BITMASK_LENGTH = «if(struct.structFields.filter[nullable].size % 8 > 0) 
+								struct.structFields.filter[nullable].size / 8 + 1 
+								else 
+								struct.structFields.filter[nullable].size / 8»; 
 
+						
 						@Override
-						public «struct.fullname» fromJsonObj(JSONObject obj) {
-							«struct.fullname».Builder builder = «struct.fullname».builder();
-							Object o = null;
+						public void toByteArray(T struct, ByteBuffer buf) {
+							final int __length_position = buf.position();
+							buf.position(buf.position() + 4);
+							BinaryParser.writestring(buf, "«struct.longname»");
+							«IF struct.structFields.filter[nullable].size > 0»
+								final int __bitmap_position = buf.position();
+								byte[] __bitmap = new byte[BITMASK_LENGTH]; 
+								buf.position(__bitmap_position + BITMASK_LENGTH);
+								BitSet bitSet = BitSet.valueOf(__bitmap);						
+							«ENDIF»
+							
+							«reset»
+							
 							«FOR field : struct.structFields»
-								o = ((JSONObject) obj).get("«field.name»");
-								«IF isStruct(field.type)»
-									builder.«field.name»(JSONStructSerializer.fromJsonObj((JSONObject) o, «(field.type.ref as Struct).fullname».class));
-								«ELSEIF isMap(field.type) || isList(field.type)»
-									builder.«field.name»(«typeNameToFunc(field.type)»fromJsonObj(o));
-								«ELSEIF isSimple(field.type)»
-									if(o != null && o instanceof String) { 
-										builder.«field.name»(«restoreSimple(field.type.simple, "(String) o")»);
-									}
-								«ELSEIF isEnum(field.type)»
-									if(o != null && o instanceof String) { 
-										builder.«field.name»(«restoreEnum(field.type.ref as EnumType, "(String) o")»);
+								«IF isJavaSimpleType(field.type) || !field.isNullable»
+									BinaryParser.write«field.type.toName»(buf, struct.«field.name»());
+								«ELSE»
+									if(«field.name» == null) {
+										bitSet.set(«k»); 
+									} else {
+										BinaryParser.write«field.type.toName»(buf, struct.«field.name»());
 									}
 								«ENDIF»
+								«increment»
+							«ENDFOR»
+							int __length = buf.position() - __length_position - 4;
+							buf.putInt(__length_position, __length);
+							«IF struct.structFields.filter[nullable].size > 0»
+								__bitmap = bitSet.toByteArray();
+								for(int __i = 0; __i < __bitmap.length; __i++) {
+									buf.put(__bitmap_position + __i, __bitmap[__i]);
+								}
+							«ENDIF»
+						}
+						
+						@Override
+						public byte [] toByteArray(T struct) {
+							ByteBuffer buf = ByteBuffer.allocate(struct.getByteSize());
+							toByteArray(struct, buf);
+							buf.flip();
+							byte [] b = new byte[buf.limit()];
+							buf.get(b, 0, b.length);
+							return b;
+						}
+						
+						@Override
+						public Object fromByteBuf(ByteBuffer buf) {
+							final Builder builder = builder();
+							final int __length = buf.getInt();
+							final String __name = BinaryParser.readstring(buf);
+							«IF struct.structFields.filter[nullable].size > 0» 
+								final byte[] __bitmap = new byte[BITMASK_LENGTH];
+								buf.get(__bitmap);
+								BitSet bitSet = BitSet.valueOf(__bitmap);
+							«ENDIF»
+							«reset()»
+							«FOR field : struct.structFields»
+								«IF isJavaSimpleType(field.type) || !field.isNullable»
+									builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
+								«ELSE»
+									if(!bitSet.get(«k»)) builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
+								«ENDIF»
+								«increment()»
 							«ENDFOR»
 							return builder.build();
 						}
@@ -141,7 +180,7 @@ public class BinaryStructSerializer {
 		}
 		
 		'''
-		fsa.generateFile("java/ru/weawer/ww/JSONStructSerializer.java", output)
+		fsa.generateFile("java/ru/weawer/ww/BinaryStructSerializer.java", output)
 	}
 	
 	def private String restoreSimple(SimpleType type, String objName) {
@@ -309,6 +348,16 @@ public class BinaryStructSerializer {
 			out = out + writeFunctionForList(map.map.value);
 		}
 		return out;  
+	}
+	
+	private static int k;
+	
+	def static private void increment() {
+		k = k + 1;
+	}
+	
+	def static private void reset() {
+		k = 0;
 	}
 	
 }

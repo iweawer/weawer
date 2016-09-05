@@ -6,7 +6,6 @@ import java.util.Set
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import ru.weawer.ww.wwDsl.EnumType
-import ru.weawer.ww.wwDsl.Field
 import ru.weawer.ww.wwDsl.List
 import ru.weawer.ww.wwDsl.SimpleType
 import ru.weawer.ww.wwDsl.Struct
@@ -88,7 +87,7 @@ public class JsonStructSerializer {
 						@Override
 						public String toJson(«struct.fullname» struct) {
 							return "{" +
-								"\"structName\": \"«struct.fullname»\""
+								"\"structName\": \"" + struct.getClass().getName() + "\""
 								«IF struct.type == 'setting'»
 									+ ", \"sysKey\": \"" + struct.sysKey() + "\""
 								«ENDIF»
@@ -212,28 +211,28 @@ public class JsonStructSerializer {
 		return "";
 	}
 	
-	def private boolean isNullable(Field f) {
-		if(isSimple(f.type)) {
-			switch(f.type.simple) {
-				case BOOLEAN: 	return false
-				case BYTE: 		return false
-				case CHAR: 		return false
-				case DATE: 		return true
-				case DATETIME: 	return true
-				case DOUBLE: 	return false
-				case FLOAT: 	return false
-				case GUID: 		return true
-				case INT: 		return false
-				case LONG: 		return false
-				case SHORT: 	return false
-				case STRING: 	return true
-				case TIME: 		return false
-				case TIMESTAMP: return false
-				case BYTEARRAY: return true
-			}
-		}
-		return true;
-	}
+//	def private boolean isNullable(Field f) {
+//		if(isSimple(f.type)) {
+//			switch(f.type.simple) {
+//				case BOOLEAN: 	return false
+//				case BYTE: 		return false
+//				case CHAR: 		return false
+//				case DATE: 		return true
+//				case DATETIME: 	return true
+//				case DOUBLE: 	return false
+//				case FLOAT: 	return false
+//				case GUID: 		return true
+//				case INT: 		return false
+//				case LONG: 		return false
+//				case SHORT: 	return false
+//				case STRING: 	return true
+//				case TIME: 		return false
+//				case TIMESTAMP: return false
+//				case BYTEARRAY: return true
+//			}
+//		}
+//		return true;
+//	}
 	
 	private Set<String> functionCache = Sets.newHashSet();
 	

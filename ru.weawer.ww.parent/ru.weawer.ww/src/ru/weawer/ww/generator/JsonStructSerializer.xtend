@@ -30,12 +30,12 @@ public class JsonStructSerializer {
 		import org.json.simple.*;
 		import com.google.common.base.*;
 		import com.google.common.collect.*;
-		import org.apache.logging.log4j.LogManager;
-		import org.apache.logging.log4j.Logger;
+		import org.slf4j.LoggerFactory;
+		import org.slf4j.Logger;
 		
 		public class JSONStructSerializer {
 			
-			private static final Logger logger = LogManager.getLogger();
+			private static final Logger logger = LoggerFactory.getLogger(JSONStructSerializer.class);
 			
 			public static <T> T fromJson(String json, Class<T> clazz) {
 				Preconditions.checkArgument(json != null && !json.isEmpty(), "JSON is empty. Cannot deserialize from it");

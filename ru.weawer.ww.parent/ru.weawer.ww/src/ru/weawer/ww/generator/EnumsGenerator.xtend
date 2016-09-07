@@ -50,8 +50,8 @@ class EnumsGenerator {
 		import java.util.*;
 		import java.util.concurrent.ConcurrentHashMap;
 		
-		import org.apache.logging.log4j.LogManager;
-		import org.apache.logging.log4j.Logger;
+		import org.slf4j.LoggerFactory;
+		import org.slf4j.Logger;
 		
 		public enum «e.name» {
 			«FOR f : e.fields»
@@ -60,7 +60,7 @@ class EnumsGenerator {
 			«ENDFOR»
 			;
 			
-			private static final Logger logger = LogManager.getLogger();
+			private static final Logger logger = LoggerFactory.getLogger(«e.name».class);
 			
 			private final int val;
 			private final long bit;

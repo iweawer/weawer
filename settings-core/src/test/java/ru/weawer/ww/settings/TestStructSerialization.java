@@ -72,7 +72,7 @@ public class TestStructSerialization {
 		
 		SimpleTypes t0 = getSimpleTypes();
 		
-		SimpleTypes t1 = SimpleTypes.fromByteArray(ByteBuffer.wrap(t0.toByteArray()));
+		SimpleTypes t1 = SimpleTypes.fromByteBuf(ByteBuffer.wrap(t0.toByteArray()));
 		
 		assertEquals(t0.en(), t1.en());
 		assertEquals(t0.b(), t1.b());
@@ -110,7 +110,7 @@ public class TestStructSerialization {
 	@Test
 	public void testMyStr1Binary() {
 		MyStr1 s0 = getMyStr1();		
-		MyStr1 s1 = MyStr1.fromByteArray(ByteBuffer.wrap(s0.toByteArray()));
+		MyStr1 s1 = MyStr1.fromByteBuf(ByteBuffer.wrap(s0.toByteArray()));
 		
 		assertEquals(s0.lo(), s1.lo());
 		assertEquals(s0.li(), s1.li());
@@ -128,7 +128,7 @@ public class TestStructSerialization {
 	@Test
 	public void testMyStr2Binary() {
 		MyStr2 s0 = getMyStr2();		
-		MyStr2 s1 = MyStr2.fromByteArray(ByteBuffer.wrap(s0.toByteArray()));
+		MyStr2 s1 = MyStr2.fromByteBuf(ByteBuffer.wrap(s0.toByteArray()));
 		
 		assertEquals(s0.s(), s1.s());
 		assertEquals(s0.s1(), s1.s1());

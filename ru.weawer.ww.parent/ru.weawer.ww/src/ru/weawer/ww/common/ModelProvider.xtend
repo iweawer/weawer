@@ -13,8 +13,6 @@ import java.util.Set
 import ru.weawer.ww.wwDsl.Struct
 import ru.weawer.ww.wwDsl.TaggableElement
 import com.google.common.collect.Sets
-import java.util.Iterator
-import org.eclipse.emf.common.notify.Notifier
 
 public class ModelProvider {
 

@@ -46,8 +46,8 @@ public class JavaClassesGenerator {
 			import org.json.simple.*;
 			import com.google.common.base.*;
 			import com.google.common.collect.*;
-			import org.apache.logging.log4j.LogManager;
-			import org.apache.logging.log4j.Logger;
+			import org.slf4j.LoggerFactory;
+			import org.slf4j.Logger;
 			import ru.weawer.ww.JSONStructSerializer;
 			import ru.weawer.ww.BinaryStructSerializer;
 			import ru.weawer.ww.BinaryParser;
@@ -61,7 +61,7 @@ public class JavaClassesGenerator {
 			«ENDIF»
 			public class «struct.name» implements Struct«IF struct.type=='setting'», Setting«ENDIF» {
 				
-				private static final Logger logger = LogManager.getLogger();
+				private static final Logger logger = LoggerFactory.getLogger(«struct.name».class);
 				private static final Charset charset = Charset.forName("UTF-8");
 				
 				public static enum Field {
@@ -305,19 +305,25 @@ public class JavaClassesGenerator {
 					return JSONStructSerializer.toJson(this);
 				}
 				
+				@Override
 				public byte [] toByteArray() {
 					return BinaryStructSerializer.toByteArray(this);
 				}
-
+				
+				@Override
 				public void toByteArray(ByteBuffer buf) {
 					BinaryStructSerializer.toByteArray(this, buf);
+				}
+				
+				public static «struct.fullname» fromByteBuf(ByteBuffer buf) {
+					return («struct.fullname») BinaryStructSerializer.fromByteBuf(buf);
 				}
 				
 				@Override
 				public int getByteSize() {
 					AtomicInteger size = new AtomicInteger(0);
 					size.addAndGet(4); // length
-					size.addAndGet("«struct.longname»".getBytes(charset).length); // struct name
+					size.addAndGet(4 + "«struct.fullname»".getBytes(charset).length); // struct name
 					«IF struct.structFields.filter[nullable].size > 0»
 						size.addAndGet(BITMASK_LENGTH);
 					«ENDIF»
@@ -326,10 +332,10 @@ public class JavaClassesGenerator {
 					
 					«FOR field : struct.structFields»
 						«IF isJavaSimpleType(field.type) || !field.isNullable»
-							BinaryParser.addsize_«field.type.toName»(size, struct.«field.name»());
+							BinaryParser.addsize_«field.type.toName»(size, «field.name»());
 						«ELSE»
 							if(«field.name» != null) {
-								BinaryParser.addsize_«field.type.toName»(size, struct.«field.name»());
+								BinaryParser.addsize_«field.type.toName»(size, «field.name»());
 							}
 						«ENDIF»
 						«increment»
@@ -476,34 +482,34 @@ public class JavaClassesGenerator {
 		return "";
 	}
 	
-	
-	def private String saveToDb(Field field) {
-		if(isEnum(field.type)) {
-			return javaToJson(field.type, field.name + "()");
-		} else if(isSimple(field.type)) {
-			val String v = field.name + "()"
-			switch(field.type.simple) {
-				case BOOLEAN: return v + " ? 1d : 0d"
-				case BYTE: return "(double) " + v
-				case CHAR: return "String.valueOf(" + v + ")"
-				case DATE: return "String.valueOf(" + v + ")"
-				case DATETIME: return "String.valueOf(" + v + ")"
-				case DOUBLE: return field.name + "()"
-				case FLOAT: return "(double) " + v
-				case GUID: return "String.valueOf(" + v + ")"
-				case INT: return "(double) " + v
-				case LONG: return "(double) " + v
-				case SHORT: return "(double) " + v
-				case STRING: return v
-				case TIME: return "String.valueOf(" + v + ")"
-				case TIMESTAMP: return "(double) " + v
-				case BYTEARRAY: return "new String(" + v + ")"
-			}
-		} else {
-			return javaToJson(field.type, field.name + "()")
-		}
-	}
-	
+//	
+//	def private String saveToDb(Field field) {
+//		if(isEnum(field.type)) {
+//			return javaToJson(field.type, field.name + "()");
+//		} else if(isSimple(field.type)) {
+//			val String v = field.name + "()"
+//			switch(field.type.simple) {
+//				case BOOLEAN: return v + " ? 1d : 0d"
+//				case BYTE: return "(double) " + v
+//				case CHAR: return "String.valueOf(" + v + ")"
+//				case DATE: return "String.valueOf(" + v + ")"
+//				case DATETIME: return "String.valueOf(" + v + ")"
+//				case DOUBLE: return field.name + "()"
+//				case FLOAT: return "(double) " + v
+//				case GUID: return "String.valueOf(" + v + ")"
+//				case INT: return "(double) " + v
+//				case LONG: return "(double) " + v
+//				case SHORT: return "(double) " + v
+//				case STRING: return v
+//				case TIME: return "String.valueOf(" + v + ")"
+//				case TIMESTAMP: return "(double) " + v
+//				case BYTEARRAY: return "new String(" + v + ")"
+//			}
+//		} else {
+//			return javaToJson(field.type, field.name + "()")
+//		}
+//	}
+//	
 	private static int k;
 	
 	def static private void increment() {

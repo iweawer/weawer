@@ -20,10 +20,6 @@ import ru.weawer.ww.wwDsl.TagWithValue
 import ru.weawer.ww.wwDsl.TaggableElement
 import ru.weawer.ww.wwDsl.WwDslPackage
 
-import static extension ru.weawer.ww.common.TypeUtil.*
-import static extension ru.weawer.ww.common.Util.*
-
-
 /**
  * This class contains custom validation rules. 
  *

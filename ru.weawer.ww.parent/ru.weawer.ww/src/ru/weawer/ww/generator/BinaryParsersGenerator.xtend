@@ -29,6 +29,7 @@ public class BinaryParsersGenerator {
 		import java.time.*;
 		import java.util.*;
 		import java.util.function.Function;
+		import java.util.concurrent.atomic.AtomicInteger;
 		import com.google.common.collect.*;
 		import ru.weawer.ww.*;
 		import ru.weawer.ww.struct.Struct;
@@ -161,7 +162,7 @@ public class BinaryParsersGenerator {
 			}
 			
 			public static final void addsize_string(AtomicInteger size, String b) {
-				size.addAndGet(b.getBytes(charset).length);
+				size.addAndGet(4 + b.getBytes(charset).length);
 			}
 			
 			// date|time|datetime|timestamp|guid
@@ -182,7 +183,7 @@ public class BinaryParsersGenerator {
 			}
 			
 			public static final void addsize_date(AtomicInteger size, LocalDate b) {
-				size.addAndGet(b.toString().getBytes().length);
+				size.addAndGet(4 + b.toString().getBytes().length);
 			}
 			
 			/* time */
@@ -201,7 +202,7 @@ public class BinaryParsersGenerator {
 			}
 			
 			public static final void addsize_time(AtomicInteger size, LocalTime b) {
-				size.addAndGet(b.toString().getBytes().length);
+				size.addAndGet(4 + b.toString().getBytes().length);
 			}
 			
 			/* datetime */
@@ -220,7 +221,7 @@ public class BinaryParsersGenerator {
 			}
 			
 			public static final void addsize_datetime(AtomicInteger size, LocalDateTime b) {
-				size.addAndGet(b.toString().getBytes().length);
+				size.addAndGet(4 + b.toString().getBytes().length);
 			}
 			
 			/* timestamp */
@@ -251,8 +252,8 @@ public class BinaryParsersGenerator {
 				return java.util.UUID.fromString(new String(b));
 			}
 			
-			public static final void addsize_datetime(AtomicInteger size, java.util.UUID b) {
-				size.addAndGet(b.toString().getBytes().length);
+			public static final void addsize_guid(AtomicInteger size, java.util.UUID b) {
+				size.addAndGet(4 + b.toString().getBytes().length);
 			}		
 			
 			/* bytearray */
@@ -269,8 +270,8 @@ public class BinaryParsersGenerator {
 				return b;
 			}
 			
-			public static final void addsize_datetime(AtomicInteger size, byte [] b) {
-				size.addAndGet(b.length);
+			public static final void addsize_bytearray(AtomicInteger size, byte [] b) {
+				size.addAndGet(4 + b.length);
 			}
 			
 			private static final ImmutableMap<Class<? extends Struct>, Function<ByteBuffer, ? extends Struct>> parsers;
@@ -411,7 +412,7 @@ public class BinaryParsersGenerator {
 		}
 		
 		public static «d.fullname» read«d.longname»(ByteBuffer buf) {
-			return «d.name».fromByteArray(buf);
+			return («d.fullname») BinaryStructSerializer.fromByteBuf(buf);
 		}
 		
 		public static void addsize_«d.longname»(AtomicInteger size, «d.fullname» d) {

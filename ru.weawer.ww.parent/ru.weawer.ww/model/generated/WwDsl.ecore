@@ -89,8 +89,6 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mutable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="fields" upperBound="-1"
         eType="#//StructField" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="fieldsExpr" upperBound="-1"
-        eType="#//FilterExpression" containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="StructField">
     <eStructuralFeatures xsi:type="ecore:EReference" name="ref" eType="#//Field"/>
@@ -98,17 +96,10 @@
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Interface" eSuperTypes="#//TaggableElement #//RefType">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="extends" unique="false"
+        upperBound="-1" eType="#//Interface"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="fields" upperBound="-1"
         eType="#//StructField" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="fieldsExpr" upperBound="-1"
-        eType="#//FilterExpression" containment="true"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="FilterExpression">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="elemType" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="packages" unique="false"
-        upperBound="-1" eType="#//Package"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="tags" upperBound="-1" eType="#//TagWithValue"
-        containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ValueExpression">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="s" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>

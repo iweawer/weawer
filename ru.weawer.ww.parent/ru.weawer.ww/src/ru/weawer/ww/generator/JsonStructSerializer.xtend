@@ -13,6 +13,7 @@ import ru.weawer.ww.wwDsl.Type
 
 import static extension ru.weawer.ww.common.TypeUtil.*
 import static extension ru.weawer.ww.common.Util.*
+import ru.weawer.ww.wwDsl.Interface
 
 @Singleton
 public class JsonStructSerializer {
@@ -37,18 +38,24 @@ public class JsonStructSerializer {
 			
 			private static final Logger logger = LoggerFactory.getLogger(JSONStructSerializer.class);
 			
-			public static <T> T fromJson(String json, Class<T> clazz) {
+			public static Object fromJson(String json) {
 				Preconditions.checkArgument(json != null && !json.isEmpty(), "JSON is empty. Cannot deserialize from it");
-				Serializer<T> serializer = (Serializer<T>) serializers.get(clazz);
-				if(serializer == null) {
-					logger.error("Serializer for {} not found", clazz.getName());
-					return null;
-				} else {
-					return serializer.fromJsonObj((JSONObject) JSONValue.parse(json));
+				JSONObject jsonObj = (JSONObject) JSONValue.parse(json);
+				String structName = jsonObj.get("structName");
+				if(structName != null) {
+					Serializer<T> serializer = (Serializer<T>) serializers.get(structName);
+					if(serializer == null) {
+						logger.error("Serializer for {} not found", structName);
+						return null;
+					} else {
+						return serializer.fromJsonObj();
+					}
 				}
+				logger.error("Cannot deserialize. Missing structName: " + json);
+				return null;
 			}
 			
-			public static <T> T fromJsonObj(JSONObject json, Class<T> clazz) {
+			public static <T> T fromJsonObj(JSONObject json, String clazz) {
 				Preconditions.checkArgument(json != null && !json.isEmpty(), "JSON is empty. Cannot deserialize from it");
 				Serializer<T> serializer = (Serializer<T>) serializers.get(clazz);
 				if(serializer == null) {
@@ -61,7 +68,7 @@ public class JsonStructSerializer {
 			
 			public static <T> String toJson(T struct) {
 				Preconditions.checkArgument(struct != null, "Struct is null. Cannot serialize to JSON");
-				Serializer<T> serializer = (Serializer<T>) serializers.get(struct.getClass());
+				Serializer<T> serializer = (Serializer<T>) serializers.get(struct.getClass().getName());
 				if(serializer == null) {
 					logger.error("Serializer for {} not found", struct.getClass().getName());
 					return null;
@@ -75,14 +82,14 @@ public class JsonStructSerializer {
 				public T fromJsonObj(JSONObject json);
 			}
 			
-			private static final Map<Class<?>, Serializer<?>> serializers = Maps.newHashMap();
+			private static final Map<String, Serializer<?>> serializers = Maps.newHashMap();
 			
 			static {
 				«FOR struct : resource.allContents
 					.filter(typeof(Struct))
 					.filter([isInPackages(packages)])
 					.toIterable»
-					serializers.put(«struct.fullname».class, new Serializer<«struct.fullname»>() {
+					serializers.put("«struct.fullname»", new Serializer<«struct.fullname»>() {
 						
 						@Override
 						public String toJson(«struct.fullname» struct) {
@@ -91,7 +98,7 @@ public class JsonStructSerializer {
 								«IF struct.type == 'setting'»
 									+ ", \"sysKey\": \"" + struct.sysKey() + "\""
 								«ENDIF»
-								«FOR field : struct.structFields»
+								«FOR field : struct.allStructFields»
 									«IF field.isNullable»
 									 	+ (struct.«field.name»() != null ? ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()")» : "")
 									«ELSE»
@@ -105,10 +112,12 @@ public class JsonStructSerializer {
 						public «struct.fullname» fromJsonObj(JSONObject obj) {
 							«struct.fullname».Builder builder = «struct.fullname».builder();
 							Object o = null;
-							«FOR field : struct.structFields»
+							«FOR field : struct.allStructFields»
 								o = ((JSONObject) obj).get("«field.name»");
 								«IF isStruct(field.type)»
-									builder.«field.name»(JSONStructSerializer.fromJsonObj((JSONObject) o, «(field.type.ref as Struct).fullname».class));
+									builder.«field.name»((«(field.type.ref as Struct).fullname») JSONStructSerializer.fromJsonObj((JSONObject) o)));
+								«ELSEIF isInterface(field.type)»
+									builder.«field.name»((«(field.type.ref as Interface).fullname») JSONStructSerializer.fromJsonObj((JSONObject) o)));
 								«ELSEIF isMap(field.type) || isList(field.type)»
 									builder.«field.name»(«typeNameToFunc(field.type)»fromJsonObj(o));
 								«ELSEIF isSimple(field.type)»
@@ -132,7 +141,7 @@ public class JsonStructSerializer {
 								.filter(typeof(Struct))
 								.filter([isInPackages(packages)])
 								.toIterable»			
-				«FOR field : struct.structFields»
+				«FOR field : struct.allStructFields»
 					«IF isMap(field.type)»
 						«writeFunctionForMap(field.type)»
 					«ELSEIF isList(field.type)»
@@ -204,6 +213,7 @@ public class JsonStructSerializer {
 	
 	def private String typeNameToFunc(Type t) {
 		if(isStruct(t)) return (t.ref as Struct).name;
+		if(isInterface(t)) return (t.ref as Interface).name;
 		if(isEnum(t))   return (t.ref as EnumType).name;
 		if(isSimple(t)) return t.simple.getName();
 		if(isList(t))   return "List" + typeNameToFunc(t.list.elem)
@@ -247,7 +257,7 @@ public class JsonStructSerializer {
 				for(Object o : (JSONArray) obj) {
 					list.add(
 «««						(«list.list.elem.toJavaType»)
-						«IF isStruct(list.list.elem)»
+						«IF isStruct(list.list.elem) || isInterface(list.list.elem)»
 							«(list.list.elem.ref as Struct).name».fromJsonObj(o)
 						«ELSEIF isMap(list.list.elem) || isList(list.list.elem)»
 							«typeNameToFunc(list.list.elem)»fromJsonObj(o)
@@ -284,6 +294,8 @@ public class JsonStructSerializer {
 «««					(«map.map.key.toJavaObjectType»)
 					«IF isStruct(map.map.key)»
 						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.key.ref as Struct).fullname».class)
+					«ELSEIF isInterface(map.map.key)»
+						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.key.ref as Interface).fullname».class)	
 					«ELSEIF isMap(map.map.key) || isList(map.map.key)»
 						«typeNameToFunc(map.map.key)»fromJsonObj(e)
 					«ELSEIF isSimple(map.map.key)»
@@ -295,6 +307,8 @@ public class JsonStructSerializer {
 «««					(«map.map.value.toJavaObjectType») 
 					«IF isStruct(map.map.value)»
 						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.value.ref as Struct).fullname».class)
+					«ELSEIF isInterface(map.map.value)»
+						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.value.ref as Interface).fullname».class)	
 					«ELSEIF isMap(map.map.value) || isList(map.map.value)»
 						«typeNameToFunc(map.map.value)»fromJsonObj(jo.get(e))
 					«ELSEIF isSimple(map.map.value)»

@@ -59,13 +59,14 @@ public class JavaClassesGenerator {
 			«IF struct.comment != null»
 			// «struct.comment»
 			«ENDIF»
-			public class «struct.name» implements Struct«IF struct.type=='setting'», Setting«ENDIF» {
+			public class «struct.name» implements Struct«IF struct.type=='setting'», Setting«ENDIF» 
+				«IF struct.implements != null && struct.implements.size > 0», «struct.implements.map[fullname].join(", ")»«ENDIF» {
 				
 				private static final Logger logger = LoggerFactory.getLogger(«struct.name».class);
 				private static final Charset charset = Charset.forName("UTF-8");
 				
 				public static enum Field {
-					«struct.structFields.map[name].join(",\n")»
+					«struct.allStructFields.map[name].join(",\n")»
 				}
 				
 				
@@ -103,14 +104,14 @@ public class JavaClassesGenerator {
 						«FOR f : struct.keys»
 							this.«f.name» = «f.name»;
 						«ENDFOR»
-						«FOR field : struct.structFields.filter[hasDefaultValue && !isKey(struct)]»
+						«FOR field : struct.allStructFields.filter[hasDefaultValue && !isKey(struct)]»
 							this.«field.name» = «getJavaDefaultValue(field)»;
 						«ENDFOR»
 						sysKey = «struct.keys.map['''String.valueOf(«name»)'''].join(" + SYS_KEY_SEPARATOR + ")»;
 					}
 				«ENDIF»
 
-				«FOR field : struct.structFields»
+				«FOR field : struct.allStructFields»
 					// «field.comment»
 					private «field.type.toJavaType» «field.name»;
 					
@@ -154,11 +155,11 @@ public class JavaClassesGenerator {
 						Builder b = copy();
 						b.updateTS(s.updateTS());
 						if(updateKey) {
-							«FOR f : struct.structFields.filter[isKey(struct)]»
+							«FOR f : struct.allStructFields.filter[isKey(struct)]»
 								b.«f.name»(s.«f.name»());						
 							«ENDFOR»
 						}
-						«FOR f : struct.structFields.filter[!isKey(struct)]»
+						«FOR f : struct.allStructFields.filter[!isKey(struct)]»
 							b.«f.name»(s.«f.name»());						
 						«ENDFOR»
 						return b.build();
@@ -167,7 +168,7 @@ public class JavaClassesGenerator {
 
 				private void calculateHashCode() {
 					int hashCode = 0;
-					«FOR f : struct.structFields»
+					«FOR f : struct.allStructFields»
 						«IF isSimple(f.type)»							
 							hashCode = hashCode * 37 + «f.type.hashCode(f.name)»;
 						«ELSE»
@@ -179,7 +180,7 @@ public class JavaClassesGenerator {
 				
 				@Override
 				public int hashCode() {
-					«IF struct.mutable || struct.structFields.filter[mutable].size > 0»
+					«IF struct.mutable || struct.allStructFields.filter[mutable].size > 0»
 						return calculateHashCode();
 					«ELSE»
 						return hashcode;
@@ -190,7 +191,7 @@ public class JavaClassesGenerator {
 				public boolean equals(Object o) {
 					if(o instanceof «struct.name») {
 						«struct.name» that = («struct.name») o;
-						«FOR f : struct.structFields»
+						«FOR f : struct.allStructFields»
 							«IF isSimple(f.type)»	
 								«IF !f.type.isJavaSimpleType && f.nullable»
 									if( (this.«f.name»() != null && that.«f.name»() == null) || 
@@ -210,7 +211,7 @@ public class JavaClassesGenerator {
 				
 				public Builder copy() {
 					return builder()
-					«struct.structFields.map['''.«name»(«name»)'''].join("\n")»;
+					«struct.allStructFields.map['''.«name»(«name»)'''].join("\n")»;
 				}
 				
 				public static Builder builder() {
@@ -219,7 +220,7 @@ public class JavaClassesGenerator {
 				
 				public static class Builder {
 					private Builder() { 
-						«FOR field : struct.structFields.filter[hasDefaultValue && !isKey(struct)]»
+						«FOR field : struct.allStructFields.filter[hasDefaultValue && !isKey(struct)]»
 							this.«field.name» = «getJavaDefaultValue(field)»;
 						«ENDFOR»
 					}
@@ -232,7 +233,7 @@ public class JavaClassesGenerator {
 						}
 					«ENDIF»
 					
-					«FOR field : struct.structFields»
+					«FOR field : struct.allStructFields»
 						// «field.comment»
 						private «field.type.toJavaType» «field.name»«IF field.hasDefaultValue» = «getJavaDefaultValue(field)»«ENDIF»;
 						private boolean «field.name»_isSet;
@@ -253,11 +254,11 @@ public class JavaClassesGenerator {
 					«ENDFOR»
 					
 					public «struct.name» build() {
-						«FOR field : struct.structFields.filter[isKey(struct) || (!nullable && !hasDefaultValue)]»
+						«FOR field : struct.allStructFields.filter[isKey(struct) || (!nullable && !hasDefaultValue)]»
 							Preconditions.checkArgument(«IF !field.type.isJavaSimpleType»«field.name» != null && «ENDIF»«field.name»_isSet, "«struct.name»: Key field «field.name» is not set. Failed to create object");
 						«ENDFOR»
-						«struct.name» r = new «struct.name»(«struct.structFields.filter[isKey(struct)].map[name].join(", ")»);
-						«FOR field : struct.structFields.filter[!isKey(struct)]»
+						«struct.name» r = new «struct.name»(«struct.allStructFields.filter[isKey(struct)].map[name].join(", ")»);
+						«FOR field : struct.allStructFields.filter[!isKey(struct)]»
 							r.«field.name» = «field.name»;
 						«ENDFOR»
 						«IF struct.type == "setting"»
@@ -271,7 +272,7 @@ public class JavaClassesGenerator {
 						for(String field : fields.keySet()) {
 							Object o = fields.get(field);
 							switch(field) {
-								«FOR field : struct.structFields»
+								«FOR field : struct.allStructFields»
 									case "«field.name»":
 										«IF field.type instanceof Struct»
 											«field.name»(JSONStructSerializer.fromJson(fields.get(field), «(field.type as Struct).fullname».class);
@@ -324,13 +325,13 @@ public class JavaClassesGenerator {
 					AtomicInteger size = new AtomicInteger(0);
 					size.addAndGet(4); // length
 					size.addAndGet(4 + "«struct.fullname»".getBytes(charset).length); // struct name
-					«IF struct.structFields.filter[nullable].size > 0»
+					«IF struct.allStructFields.filter[nullable].size > 0»
 						size.addAndGet(BITMASK_LENGTH);
 					«ENDIF»
 					
 					«reset»
 					
-					«FOR field : struct.structFields»
+					«FOR field : struct.allStructFields»
 						«IF isJavaSimpleType(field.type) || !field.isNullable»
 							BinaryParser.addsize_«field.type.toName»(size, «field.name»());
 						«ELSE»

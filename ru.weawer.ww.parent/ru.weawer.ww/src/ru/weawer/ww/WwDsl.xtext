@@ -75,7 +75,6 @@ Struct:
 		('keys' keys+=[Field | QualifiedName]+))?
 		(mutable?='mutable')?
 		fields+=StructField*
-		fieldsExpr+=FilterExpression*
 	'}'
 ;
 
@@ -84,16 +83,15 @@ StructField:
 ;
 
 Interface:
-	'interface' name=ID ('[' tags+=TagWithValue+ ']')? '{'
+	'interface' name=ID ('[' tags+=TagWithValue+ ']')? ('extends' extends+=[Interface | QualifiedName]+)? '{'
 		(comment=COMMENT)?
 		fields+=StructField*
-		fieldsExpr+=FilterExpression*
 	'}'
 ;
 
-FilterExpression:
-	elemType=('fields'|'structs'|'settings') 'from' 'packages' packages+=[Package | QualifiedName]+ ('byTags' tags+=TagWithValue+)?
-;
+//FilterExpression:
+//	elemType=('structs'|'settings') 'from' 'packages' packages+=[Package | QualifiedName]+ ('byTags' tags+=TagWithValue+)?
+//;
 
 QualifiedName:
   ID('.'ID)*

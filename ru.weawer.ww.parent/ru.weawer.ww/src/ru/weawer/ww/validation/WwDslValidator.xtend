@@ -19,6 +19,11 @@ import ru.weawer.ww.wwDsl.StructField
 import ru.weawer.ww.wwDsl.TagWithValue
 import ru.weawer.ww.wwDsl.TaggableElement
 import ru.weawer.ww.wwDsl.WwDslPackage
+import ru.weawer.ww.wwDsl.Interface
+import java.util.Map
+
+import static extension ru.weawer.ww.common.TypeUtil.*
+import static extension ru.weawer.ww.common.Util.*
 
 /**
  * This class contains custom validation rules. 
@@ -204,17 +209,54 @@ class WwDslValidator extends AbstractWwDslValidator {
 			}
 		}
 	}
-		
+	
+	
 	@Check
-	def void checkStruct(Struct struct) {
-		if(struct.fieldsExpr != null) {
-			struct.fieldsExpr.forEach[{
-				if(elemType != 'fields') {
-					error("Only 'fields' allowed here in expression", WwDslPackage.Literals.STRUCT__FIELDS_EXPR)
+	def void checkInterfaceFields(Interface i) {
+		val Map<String, Field> fields = i.interfaceFieldsAsMap;
+		if(i.extends != null && i.extends.size > 0) {
+			for(e : i.extends) {
+				var Map<String, Field> m = e.allInterfaceFieldsAsMap;
+				for(name : m.keySet) {
+					var f = m.get(name)
+					if(fields.containsKey(name)) {
+						var o = fields.get(name)
+						if(!o.type.typeName.equals(f.type.typeName)) {
+							error("Field name collision for " + name + ", types are different: " + o.type.typeName + " != " + f.type.typeName, 
+								WwDslPackage.Literals.INTERFACE__EXTENDS
+							)
+						}
+					} else {
+						fields.put(name, f)
+					}
 				}
-			}]
+			}
 		}
 	}
+	
+	@Check
+	def void checkStructFields(Struct s) {
+		val Map<String, Field> fields = s.structFieldsAsMap;
+		if(s.implements != null && s.implements.size > 0) {
+			for(e : s.implements) {
+				var Map<String, Field> m = e.allInterfaceFieldsAsMap;
+				for(name : m.keySet) {
+					var f = m.get(name)
+					if(fields.containsKey(name)) {
+						var o = fields.get(name)
+						if(!o.type.typeName.equals(f.type.typeName)) {
+							error("Field name collision for " + name + ", types are different: " + o.type.typeName + " != " + f.type.typeName, 
+								WwDslPackage.Literals.STRUCT__IMPLEMENTS
+							)
+						}
+					} else {
+						fields.put(name, f)
+					}
+				}
+			}
+		}
+	}	
+		
 	
 //	@Check
 //	def void checkSetting(Struct setting) {

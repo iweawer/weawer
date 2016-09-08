@@ -6,6 +6,7 @@ import ru.weawer.ww.wwDsl.Map
 import ru.weawer.ww.wwDsl.SimpleType
 import ru.weawer.ww.wwDsl.Struct
 import ru.weawer.ww.wwDsl.Type
+import ru.weawer.ww.wwDsl.Interface
 
 public class TypeUtil {
 	
@@ -27,6 +28,10 @@ public class TypeUtil {
 	
 	def public static boolean isStruct(Type type) {
 		return type.ref != null && type.ref instanceof Struct
+	}
+	
+	def public static boolean isInterface(Type type) {
+		return type.ref != null && type.ref instanceof Interface
 	}
 	
 	def public static String toJavaType(SimpleType type) {
@@ -87,6 +92,8 @@ public class TypeUtil {
 			return toJavaType(type.list)
 		} else if(isStruct(type)) {
 			return Util.getFullname(type.ref as Struct)
+		} else if(isInterface(type)) {
+			return Util.getFullname(type.ref as Interface)
 		}
 		return null;
 	}
@@ -179,7 +186,7 @@ public class TypeUtil {
 			return '''"{" + «name».entrySet().stream().map(e«count» -> «javaToJson(type.map.key, "e"+count + ".getKey()", count+1)» + ":" + «javaToJson(type.map.value, "e"+count+".getValue()", count+1)»).collect(Collectors.joining(",")) + "}"'''
 		} else if(isList(type)) {
 			return '''"[" + «name».stream().map(e«count» -> «javaToJson(type.list.elem, "e"+count, count+1)»).collect(Collectors.joining(",")) + "]"'''
-		} else if(isStruct(type)) {
+		} else if(isStruct(type) || isInterface(type)) {
 			return '''JSONStructSerializer.toJson(«name»)'''
 		}
 		return null;

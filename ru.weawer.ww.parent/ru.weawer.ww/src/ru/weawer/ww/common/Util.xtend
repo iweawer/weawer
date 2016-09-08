@@ -1,12 +1,15 @@
 package ru.weawer.ww.common
 
-import com.google.common.collect.Lists
+import com.google.common.collect.Maps
 import com.google.common.collect.Sets
 import java.util.List
+import java.util.Map
+import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import ru.weawer.ww.wwDsl.Element
 import ru.weawer.ww.wwDsl.EnumType
 import ru.weawer.ww.wwDsl.Field
+import ru.weawer.ww.wwDsl.Interface
 import ru.weawer.ww.wwDsl.Package
 import ru.weawer.ww.wwDsl.SimpleType
 import ru.weawer.ww.wwDsl.Struct
@@ -53,27 +56,62 @@ public class Util {
 //		return structs;
 //	}
 	
-	def public static List<Field> getStructFields(Struct c) {
-		val List<Field> fields = Lists::newArrayList();
-		fields.addAll(c.fields.filter[ref != null].map[ref].toList);
-		fields.addAll(c.fields.filter[field != null].map[field].toList);
-		if(c.fieldsExpr != null) {
-			val res = 
-				c.fieldsExpr
-				.map[ expr |
-					expr.packages
-					.map[element] // take all contents of packages
-					.flatten // make single list from list of lists
-					.toSet // remove duplicates
-					.filter[it instanceof Field]  // take only elements of type Field
-					.map[it as Field]   // cast to TaggableElement
-					.filterByTag(expr.tags)       // filter by tags specified in filterExpr
-				]
-				.flatten
-				.toSet
-			fields.addAll(res)
-		}
+	def public static Set<Field> getStructFields(Struct c) {
+		return getStructFieldsAsMap(c).values.toSet
+	}
+		
+	def public static Map<String, Field> getStructFieldsAsMap(Struct c) {
+		val Map<String, Field> fields = Maps::newHashMap();
+		c.fields.filter[ref != null].map[ref].forEach[
+			fields.put(it.name, it)
+		]
+		c.fields.filter[field != null].map[field].forEach[
+			fields.put(it.name, it)
+		]
 		return fields;
+	}
+	
+	def public static Set<Field> getInterfaceFields(Interface c) {
+		return getInterfaceFieldsAsMap(c).values.toSet;
+	}
+	
+	def public static Map<String, Field> getInterfaceFieldsAsMap(Interface c) {
+		val Map<String, Field> fields = Maps::newHashMap();
+		c.fields.filter[ref != null].map[ref].forEach[
+			fields.put(it.name, it)
+		]
+		c.fields.filter[field != null].map[field].forEach[
+			fields.put(it.name, it)
+		]
+		return fields;
+	} 
+	
+	def public static Map<String, Field> getAllInterfaceFieldsAsMap(Interface i) {
+		val Map<String, Field> fields = i.interfaceFieldsAsMap;
+		if(i.extends != null && i.extends.size > 0) {
+			for(e : i.extends) {
+				fields.putAll(e.interfaceFieldsAsMap);
+			}
+		}
+		return fields  
+	}
+	
+	def public static Set<Field> getAllInterfaceFields(Interface i) {
+		return i.allInterfaceFieldsAsMap.values.toSet
+	}
+	
+	def public static Map<String, Field> getAllStructFieldsAsMap(Struct i) {
+		val Map<String, Field> fields = i.structFieldsAsMap;
+		if(i.implements != null && i.implements.size > 0) {
+			for(e : i.implements) {
+				fields.putAll(e.interfaceFieldsAsMap);
+			}
+		}
+		return fields  
+	}
+	
+	def public static Set<Field> getAllStructFields(Struct c) {
+		return c.allStructFieldsAsMap.values.toSet
 	}
 	
 	def public static <T extends TaggableElement> Iterable<T> filterByTag(Iterable<T> elements, Iterable<TagWithValue> includeTags) {
@@ -87,9 +125,9 @@ public class Util {
 			return (f.eContainer as Package).name + "." + f.name
 		} else if(f.eContainer instanceof StructField) {
 			val sf = f.eContainer as StructField
-			val s = sf.eContainer as Struct
-			val p = s.eContainer as Package
-			return p.name + "." + s.name + "." + f.name
+			val sname = if(sf.eContainer instanceof Struct) (sf.eContainer as Struct).name else (sf.eContainer as Interface).name
+			val p = sf.eContainer.eContainer as Package
+			return p.name + "." + sname + "." + f.name
 		}
 		return name;
 	}
@@ -103,6 +141,10 @@ public class Util {
 	}
 	
 	def public static String getFullname(Struct t) {
+		return (t.eContainer as Package).name + "." + t.name 
+	}
+	
+	def public static String getFullname(Interface t) {
 		return (t.eContainer as Package).name + "." + t.name 
 	}
 	

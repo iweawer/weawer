@@ -54,5 +54,23 @@ package ru.weawer.ww.sett {
 		field MyStr2 s2
 	}
 	
+	interface ITest {
+		field MyStr1 s1
+	}
 	
+	interface Base {
+		field string s1
+	}
+	
+	interface Base2 {
+		field string s1
+	}
+	
+	interface Child extends Base Base2 {
+		field long s2
+	}
+	
+	struct ChildStruct implements Child {
+		field Base base
+	}
 }

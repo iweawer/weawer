@@ -57,7 +57,7 @@ public class BinaryStructSerializer {
 					}
 				}
 			
-			public static <T extends Struct> void toByteArray(T struct, ByteBuffer buf) {
+			public static <T> void toByteArray(T struct, ByteBuffer buf) {
 				Preconditions.checkArgument(struct != null, "Struct is null. Cannot serialize to byte array");
 				Serializer<T> serializer = (Serializer<T>) serializers.get(struct.getClass().getName());
 				if(serializer == null) {
@@ -68,7 +68,7 @@ public class BinaryStructSerializer {
 				}
 			}
 			
-			public static <T extends Struct> byte [] toByteArray(T struct) {
+			public static <T> byte [] toByteArray(T struct) {
 				Preconditions.checkArgument(struct != null, "Struct is null. Cannot serialize to byte array");
 				Serializer<T> serializer = (Serializer<T>) serializers.get(struct.getClass().getName());
 				if(serializer == null) {
@@ -79,7 +79,7 @@ public class BinaryStructSerializer {
 				}
 			}
 			
-			private interface Serializer<T extends Struct> {
+			private interface Serializer<T> {
 				public void toByteArray(T struct, ByteBuffer buf);
 				public byte [] toByteArray(T struct);
 				public Object fromByteBuf(ByteBuffer buf);
@@ -94,10 +94,10 @@ public class BinaryStructSerializer {
 					.toIterable»
 					serializers.put("«struct.fullname»", new Serializer<«struct.fullname»>() {
 						
-						private static final int BITMASK_LENGTH = «if(struct.structFields.filter[nullable].size % 8 > 0) 
-								struct.structFields.filter[nullable].size / 8 + 1 
+						private static final int BITMASK_LENGTH = «if(struct.allStructFields.filter[nullable].size % 8 > 0) 
+								struct.allStructFields.filter[nullable].size / 8 + 1 
 								else 
-								struct.structFields.filter[nullable].size / 8»; 
+								struct.allStructFields.filter[nullable].size / 8»; 
 
 						
 						@Override
@@ -105,7 +105,7 @@ public class BinaryStructSerializer {
 							final int __length_position = buf.position();
 							buf.position(buf.position() + 4);
 							BinaryParser.writestring(buf, "«struct.fullname»");
-							«IF struct.structFields.filter[nullable].size > 0»
+							«IF struct.allStructFields.filter[nullable].size > 0»
 								final int __bitmap_position = buf.position();
 								byte[] __bitmap = new byte[BITMASK_LENGTH]; 
 								buf.position(__bitmap_position + BITMASK_LENGTH);
@@ -114,7 +114,7 @@ public class BinaryStructSerializer {
 							
 							«reset»
 							
-							«FOR field : struct.structFields»
+							«FOR field : struct.allStructFields»
 								«IF isJavaSimpleType(field.type) || !field.isNullable»
 									BinaryParser.write«field.type.toName»(buf, struct.«field.name»());
 								«ELSE»
@@ -128,7 +128,7 @@ public class BinaryStructSerializer {
 							«ENDFOR»
 							int __length = buf.position() - __length_position - 4;
 							buf.putInt(__length_position, __length);
-							«IF struct.structFields.filter[nullable].size > 0»
+							«IF struct.allStructFields.filter[nullable].size > 0»
 								__bitmap = bitSet.toByteArray();
 								for(int __i = 0; __i < __bitmap.length; __i++) {
 									buf.put(__bitmap_position + __i, __bitmap[__i]);
@@ -151,13 +151,13 @@ public class BinaryStructSerializer {
 							final «struct.fullname».Builder builder = «struct.fullname».builder();
 							final int __length = buf.getInt();
 							final String __name = BinaryParser.readstring(buf);
-							«IF struct.structFields.filter[nullable].size > 0» 
+							«IF struct.allStructFields.filter[nullable].size > 0» 
 								final byte[] __bitmap = new byte[BITMASK_LENGTH];
 								buf.get(__bitmap);
 								BitSet bitSet = BitSet.valueOf(__bitmap);
 							«ENDIF»
 							«reset()»
-							«FOR field : struct.structFields»
+							«FOR field : struct.allStructFields»
 								«IF isJavaSimpleType(field.type) || !field.isNullable»
 									builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
 								«ELSE»

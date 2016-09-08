@@ -85,20 +85,14 @@
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/keys"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//Struct/mutable"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/fields"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Struct/fieldsExpr"/>
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//StructField">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//StructField/ref"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//StructField/field"/>
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//Interface">
+      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Interface/extends"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Interface/fields"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//Interface/fieldsExpr"/>
-    </genClasses>
-    <genClasses ecoreClass="WwDsl.ecore#//FilterExpression">
-      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//FilterExpression/elemType"/>
-      <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference WwDsl.ecore#//FilterExpression/packages"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference WwDsl.ecore#//FilterExpression/tags"/>
     </genClasses>
     <genClasses ecoreClass="WwDsl.ecore#//ValueExpression">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute WwDsl.ecore#//ValueExpression/s"/>

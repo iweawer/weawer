@@ -69,6 +69,10 @@ public class JavaClassesGenerator {
 					«struct.allStructFields.map[name].join(",\n")»
 				}
 				
+				private static final int BITMASK_LENGTH = «if(struct.allStructFields.filter[nullable].size % 8 > 0) 
+												struct.allStructFields.filter[nullable].size / 8 + 1 
+												else 
+												struct.allStructFields.filter[nullable].size / 8»; 
 				
 				private int hashcode;
 				
@@ -169,10 +173,10 @@ public class JavaClassesGenerator {
 				private void calculateHashCode() {
 					int hashCode = 0;
 					«FOR f : struct.allStructFields»
-						«IF isSimple(f.type)»							
+						«IF isJavaSimpleType(f.type)»							
 							hashCode = hashCode * 37 + «f.type.hashCode(f.name)»;
 						«ELSE»
-							hashCode = hashCode * 37 + «f.name».hashCode();
+							«IF f.isNullable»if(«f.name» != null) «ENDIF»hashCode = hashCode * 37 + «f.name».hashCode();
 						«ENDIF»
 					«ENDFOR»
 					hashcode = hashCode;
@@ -196,7 +200,10 @@ public class JavaClassesGenerator {
 								«IF !f.type.isJavaSimpleType && f.nullable»
 									if( (this.«f.name»() != null && that.«f.name»() == null) || 
 										(this.«f.name»() == null && that.«f.name»() != null) ||
-										(this.«f.name»() != null && !this.«f.name»().equals(that.«f.name»())) return false;
+										(this.«f.name»() != null && !this.«f.name»().equals(that.«f.name»())) 
+									   ) { 
+									   		return false;
+									   }
 								«ELSE»						
 									if(! («TypeUtil.equals(f.type, f.name)»)) return false;
 								«ENDIF»
@@ -332,7 +339,15 @@ public class JavaClassesGenerator {
 					«reset»
 					
 					«FOR field : struct.allStructFields»
-						«IF isJavaSimpleType(field.type) || !field.isNullable»
+						«IF isInterface(field.type)»
+							«IF field.isNullable»
+								if(«field.name» != null) {
+									size.addAndGet(«field.name»().getByteSize());
+								}
+							«ELSE»
+								size.addAndGet(«field.name»().getByteSize());
+							«ENDIF»
+						«ELSEIF isJavaSimpleType(field.type) || !field.isNullable»
 							BinaryParser.addsize_«field.type.toName»(size, «field.name»());
 						«ELSE»
 							if(«field.name» != null) {

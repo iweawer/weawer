@@ -18,6 +18,7 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableMap;
 
 import ru.weawer.ww.JSONStructSerializer;
+import ru.weawer.ww.sett.ChildStruct;
 import ru.weawer.ww.sett.En1;
 import ru.weawer.ww.sett.MyStr1;
 import ru.weawer.ww.sett.MyStr2;
@@ -36,7 +37,7 @@ public class TestStructSerialization {
 	@Test
 	public void testSimleTypesJson() {
 		SimpleTypes t0 = getSimpleTypes();		
-		SimpleTypes t1 = JSONStructSerializer.fromJson(t0.toJson(), SimpleTypes.class);
+		SimpleTypes t1 = (SimpleTypes) JSONStructSerializer.fromJson(t0.toJson());
 		
 		assertEquals(t0.en(), t1.en());
 		assertEquals(t0.b(), t1.b());
@@ -97,7 +98,7 @@ public class TestStructSerialization {
 	@Test
 	public void testMyStr1Json() {
 		MyStr1 s0 = getMyStr1();
-		MyStr1 s1 = JSONStructSerializer.fromJson(s0.toJson(), MyStr1.class);
+		MyStr1 s1 = (MyStr1) JSONStructSerializer.fromJson(s0.toJson());
 		
 		assertEquals(s0.lo(), s1.lo());
 		assertEquals(s0.li(), s1.li());
@@ -115,7 +116,7 @@ public class TestStructSerialization {
 	@Test
 	public void testMyStr2Json() {
 		MyStr2 s0 = getMyStr2();
-		MyStr2 s1 = JSONStructSerializer.fromJson(s0.toJson(), MyStr2.class);
+		MyStr2 s1 = (MyStr2) JSONStructSerializer.fromJson(s0.toJson());
 		
 		assertEquals(s0.s(), s1.s());
 		assertEquals(s0.s1(), s1.s1());
@@ -128,6 +129,34 @@ public class TestStructSerialization {
 		
 		assertEquals(s0.s(), s1.s());
 		assertEquals(s0.s1(), s1.s1());
+	}
+	
+	@Test
+	public void testInterfaceBinary1() {
+		ChildStruct c0 = ChildStruct.builder().b("test12").base(getMyStr1()).l(-34l).s1("s1").s2(12431234213123423l).build();
+		ChildStruct c1 = ChildStruct.fromByteBuf(ByteBuffer.wrap(c0.toByteArray()));
+		assertEquals(c0, c1);
+	}
+	
+	@Test
+	public void testInterfaceBinary2() {
+		ChildStruct c0 = ChildStruct.builder().b("test12").base(getMyStr2()).l(-34l).s1("s1").s2(12431234213123423l).build();
+		ChildStruct c1 = ChildStruct.fromByteBuf(ByteBuffer.wrap(c0.toByteArray()));
+		assertEquals(c0, c1);
+	}
+	
+	@Test
+	public void testInterfaceJson1() {
+		ChildStruct c0 = ChildStruct.builder().b("test12").base(getMyStr1()).l(-34l).s1("s1").s2(12431234213123423l).build();
+		ChildStruct c1 = (ChildStruct) JSONStructSerializer.fromJson(c0.toJson());
+		assertEquals(c0, c1);
+	}
+	
+	@Test
+	public void testInterfaceJson2() {
+		ChildStruct c0 = ChildStruct.builder().b("test12").base(getMyStr2()).l(-34l).s1("s1").s2(12431234213123423l).build();
+		ChildStruct c1 = (ChildStruct) JSONStructSerializer.fromJson(c0.toJson());
+		assertEquals(c0, c1);
 	}
 	
 	private SimpleTypes getSimpleTypes() {

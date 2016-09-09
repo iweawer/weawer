@@ -35,22 +35,5 @@ public class TestSettingsContainer {
 		byte [] b1 = Struct.byteArrayFromString(Arrays.toString(b));
 		System.out.println(Arrays.toString(b1));
 	}
-	
-	public static void main(String[] args) {
-		byte [] b = new byte[10];
-		ByteBuffer buf = ByteBuffer.wrap(b);
-		buf.putInt(100);
-		buf.putInt(200);
-		buf.putChar('a');
-		buf.flip();
-		int pos = buf.position();
-		int i1 = buf.getInt();
-		buf.position(pos);
-		i1 = buf.getInt();
-		int i2 = buf.getInt();
-		char c = buf.getChar();
-		buf.rewind();
-		
-	}
 
 }

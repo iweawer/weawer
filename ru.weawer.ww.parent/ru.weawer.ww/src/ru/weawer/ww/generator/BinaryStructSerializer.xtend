@@ -10,6 +10,7 @@ import ru.weawer.ww.wwDsl.Type
 
 import static extension ru.weawer.ww.common.TypeUtil.*
 import static extension ru.weawer.ww.common.Util.*
+import ru.weawer.ww.wwDsl.Interface
 
 @Singleton
 public class BinaryStructSerializer {
@@ -115,10 +116,20 @@ public class BinaryStructSerializer {
 							«reset»
 							
 							«FOR field : struct.allStructFields»
-								«IF isJavaSimpleType(field.type) || !field.isNullable»
+								«IF isInterface(field.type)»
+									«IF field.isNullable»
+										if(«field.name» == null) {
+											bitSet.set(«k»); 
+										} else {
+											struct.«field.name»().toByteArray(buf);
+										}
+									«ELSE»
+										struct.«field.name»().toByteArray(buf);
+									«ENDIF»
+								«ELSEIF isJavaSimpleType(field.type) || !field.isNullable»
 									BinaryParser.write«field.type.toName»(buf, struct.«field.name»());
 								«ELSE»
-									if(«field.name» == null) {
+									if(struct.«field.name»() == null) {
 										bitSet.set(«k»); 
 									} else {
 										BinaryParser.write«field.type.toName»(buf, struct.«field.name»());
@@ -158,8 +169,14 @@ public class BinaryStructSerializer {
 							«ENDIF»
 							«reset()»
 							«FOR field : struct.allStructFields»
-								«IF isJavaSimpleType(field.type) || !field.isNullable»
-									builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
+								«IF isInterface(field.type)»
+									«IF field.isNullable»
+										if(!bitSet.get(«k»)) builder.«field.name»((«(field.type as Interface).fullname») BinaryStructSerializer.fromByteBuf(buf));
+									«ELSE»
+										builder.«field.name»((«(field.type.ref as Interface).fullname») BinaryStructSerializer.fromByteBuf(buf));
+									«ENDIF»
+								«ELSEIF isJavaSimpleType(field.type) || !field.isNullable»
+									builder.«field.name»(BinaryParser.read«field.type.toName»(buf));									
 								«ELSE»
 									if(!bitSet.get(«k»)) builder.«field.name»(BinaryParser.read«field.type.toName»(buf));
 								«ENDIF»

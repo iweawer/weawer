@@ -125,6 +125,8 @@ public class TypeUtil {
 			return toName(type.list)
 		} else if(isStruct(type)) {
 			return Util.getLongname(type.ref as Struct)
+		} else if(isInterface(type)) {
+			return Util.getLongname(type.ref as Interface)
 		}
 		return null;
 	}

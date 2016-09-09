@@ -36,12 +36,12 @@ package ru.weawer.ww.sett {
 	
 	
 	
-	struct MyStr1 [Str] {
+	struct MyStr1 [Str] implements Base {
 		field long lo
 		field list<map<date, boolean>> li
 	}
 	
-	struct MyStr2 [Str] {
+	struct MyStr2 [Str] implements Base {
 		field string s
 		field MyStr1 s1
 	}
@@ -59,7 +59,7 @@ package ru.weawer.ww.sett {
 	}
 	
 	interface Base {
-		field string s1
+		field string b nullable
 	}
 	
 	interface Base2 {
@@ -72,5 +72,6 @@ package ru.weawer.ww.sett {
 	
 	struct ChildStruct implements Child {
 		field Base base
+		field long l
 	}
 }

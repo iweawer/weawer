@@ -90,7 +90,7 @@ public class Util {
 		val Map<String, Field> fields = i.interfaceFieldsAsMap;
 		if(i.extends != null && i.extends.size > 0) {
 			for(e : i.extends) {
-				fields.putAll(e.interfaceFieldsAsMap);
+				fields.putAll(e.allInterfaceFieldsAsMap);
 			}
 		}
 		return fields  
@@ -104,7 +104,7 @@ public class Util {
 		val Map<String, Field> fields = i.structFieldsAsMap;
 		if(i.implements != null && i.implements.size > 0) {
 			for(e : i.implements) {
-				fields.putAll(e.interfaceFieldsAsMap);
+				fields.putAll(e.allInterfaceFieldsAsMap);
 			}
 		}
 		return fields  
@@ -149,6 +149,10 @@ public class Util {
 	}
 	
 	def public static String getLongname(Struct t) {
+		return getFullname(t).replaceAll("\\.", "_")
+	}
+	
+	def public static String getLongname(Interface t) {
 		return getFullname(t).replaceAll("\\.", "_")
 	}
 	

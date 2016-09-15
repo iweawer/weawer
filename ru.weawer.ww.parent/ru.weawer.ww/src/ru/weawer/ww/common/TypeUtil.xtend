@@ -175,42 +175,50 @@ public class TypeUtil {
 		return null;
 	}
 	
-	def public static String javaToJson(Type type, String name) {
-		return javaToJson(type, name, 0);
+	def public static String javaToJson(Type type, String name, boolean quoted) {
+		return javaToJson(type, name, quoted, 0);
 	}
 	
-	def private static String javaToJson(Type type, String name, int count) {
+	def private static String javaToJson(Type type, String name, boolean quoted, int count) {
 		if(isSimple(type)) {
-			return simpleTypeToJson(type, name);
+			return simpleTypeToJson(type, name, quoted);
 		} else if(isEnum(type)) {
 			return '''"\"" + «name».name() + "\""''';
 		} else if(isMap(type)) {
-			return '''"{" + «name».entrySet().stream().map(e«count» -> «javaToJson(type.map.key, "e"+count + ".getKey()", count+1)» + ":" + «javaToJson(type.map.value, "e"+count+".getValue()", count+1)»).collect(Collectors.joining(",")) + "}"'''
+			return '''"{" + «name».entrySet().stream().map(e«count» -> «javaToJson(type.map.key, "e"+count + ".getKey()", true, count+1)» + ":" + «javaToJson(type.map.value, "e"+count+".getValue()", false, count+1)»).collect(Collectors.joining(",")) + "}"'''
 		} else if(isList(type)) {
-			return '''"[" + «name».stream().map(e«count» -> «javaToJson(type.list.elem, "e"+count, count+1)»).collect(Collectors.joining(",")) + "]"'''
+			return '''"[" + «name».stream().map(e«count» -> «javaToJson(type.list.elem, "e"+count, false, count+1)»).collect(Collectors.joining(",")) + "]"'''
 		} else if(isStruct(type) || isInterface(type)) {
 			return '''JSONStructSerializer.toJson(«name»)'''
 		}
 		return null;
 	}
 	
-	def private static String simpleTypeToJson(Type type, String name) {
+	def private static String simpleTypeToJson(Type type, String name, boolean quoted) {
 		switch(type.simple) {
-			case SimpleType.BOOLEAN: return name
-			case SimpleType.BYTE: return name
+			case SimpleType.BOOLEAN: return quoted(name, quoted)
+			case SimpleType.BYTE: return quoted(name, quoted)
 			case SimpleType.CHAR: return '''"\"" + String.valueOf(«name») + "\""'''
-			case SimpleType.SHORT: return name
-			case SimpleType.INT: return name
-			case SimpleType.LONG: return name
-			case SimpleType.FLOAT: return name
-			case SimpleType.DOUBLE: return name
-			case SimpleType.STRING: return '''"\"" + «name» + "\""'''
+			case SimpleType.SHORT: return quoted(name, quoted)
+			case SimpleType.INT: return quoted(name, quoted)
+			case SimpleType.LONG: return quoted(name, quoted)
+			case SimpleType.FLOAT: return quoted(name, quoted)
+			case SimpleType.DOUBLE: return quoted(name, quoted)
+			case SimpleType.STRING: return quoted(name, true)
 			case SimpleType.DATE: return '''"\"" + String.valueOf(«name») + "\""'''
 			case SimpleType.TIME: return '''"\"" + String.valueOf(«name») + "\""'''
 			case SimpleType.DATETIME: return '''"\"" + String.valueOf(«name») + "\""'''
-			case SimpleType.TIMESTAMP: return name
+			case SimpleType.TIMESTAMP: return quoted(name, quoted)
 			case SimpleType.GUID: return '''"\"" + String.valueOf(«name») + "\""'''
 			case SimpleType.BYTEARRAY: return '''"\"" + Arrays.toString(«name») + "\""'''
+		}
+	}
+	
+	def private static String quoted(String name, boolean quoted) {
+		if(quoted) {
+			'''"\"" + «name» + "\""'''
+		} else {
+			name
 		}
 	}
 	

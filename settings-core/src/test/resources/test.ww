@@ -47,11 +47,17 @@ package ru.weawer.ww.sett {
 	}
 	
 	setting ComplexTypes [ TDEV TTAG Complex ] {
+		single 
 		field list<string> listString
 		field map<int, string> listIntString
 		field map<double, list<En1>> m
 		field MyStr1 s1
 		field MyStr2 s2
+	}
+	
+	setting AnotherSetting {
+		keys id		
+		field string id
 	}
 	
 	interface ITest {

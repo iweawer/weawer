@@ -93,9 +93,9 @@ public class JsonStructSerializer {
 								«ENDIF»
 								«FOR field : struct.allStructFields»
 									«IF field.isNullable»
-									 	+ (struct.«field.name»() != null ? ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()")» : "")
+									 	+ (struct.«field.name»() != null ? ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()", false)» : "")
 									«ELSE»
-										+ ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()")»
+										+ ", \"«field.name»\":" + «javaToJson(field.type, "struct." + field.name + "()", false)»
 									«ENDIF»
 								«ENDFOR»
 							+ "}";
@@ -198,6 +198,56 @@ public class JsonStructSerializer {
 		}
 	}
 	
+	def private String restoreSimpleFromString(SimpleType type, String objName) {
+		switch(type) {
+			case BOOLEAN: {
+				"Boolean.parseBoolean((String) " + objName +")"
+			}
+			case BYTE: {
+				"(byte) Integer.parseInt((String) " + objName +")"
+			}
+			case CHAR: {
+				"((String) " + objName + ").charAt(0)"
+			}
+			case DATE: {
+				"LocalDate.parse((String) " + objName + ")"
+			}
+			case DATETIME: {
+				"LocalDateTime.parse((String) " + objName + ")"
+			}
+			case DOUBLE: {
+				"Double.parseDouble((String) " + objName +")"
+			}
+			case FLOAT: {
+				"Float.parseFloat((String) " + objName +")"
+			}
+			case GUID: {
+				"java.util.UUID.fromString((String) " + objName + ")" 
+			}
+			case INT: {
+				"Integer.parseInt((String) " + objName +")"
+			}
+			case LONG: {
+				"Long.parseLong((String) " + objName +")"
+			}
+			case SHORT: {
+				"Short.parseShort((String) " + objName +")"
+			}
+			case STRING: {
+				"(String) " + objName
+			}
+			case TIME: {
+				"LocalTime.parse((String) " + objName + ")"
+			}
+			case TIMESTAMP: {
+				"Long.parseLong((String) " + objName +")"
+			}
+			case BYTEARRAY: {
+				"ru.weawer.ww.struct.Struct.byteArrayFromString((String) " + objName + ")"
+			}
+		}
+	}
+	
 	def private String restoreEnum(EnumType type, String objName) {
 		var Double l = 12.23;
 		l.floatValue
@@ -214,29 +264,6 @@ public class JsonStructSerializer {
 		return "";
 	}
 	
-//	def private boolean isNullable(Field f) {
-//		if(isSimple(f.type)) {
-//			switch(f.type.simple) {
-//				case BOOLEAN: 	return false
-//				case BYTE: 		return false
-//				case CHAR: 		return false
-//				case DATE: 		return true
-//				case DATETIME: 	return true
-//				case DOUBLE: 	return false
-//				case FLOAT: 	return false
-//				case GUID: 		return true
-//				case INT: 		return false
-//				case LONG: 		return false
-//				case SHORT: 	return false
-//				case STRING: 	return true
-//				case TIME: 		return false
-//				case TIMESTAMP: return false
-//				case BYTEARRAY: return true
-//			}
-//		}
-//		return true;
-//	}
-	
 	private Set<String> functionCache = Sets.newHashSet();
 	
 	def private String writeFunctionForList(Type list) {
@@ -249,7 +276,6 @@ public class JsonStructSerializer {
 			if(obj instanceof JSONArray) {
 				for(Object o : (JSONArray) obj) {
 					list.add(
-«««						(«list.list.elem.toJavaType»)
 						«IF isStruct(list.list.elem) || isInterface(list.list.elem)»
 							«(list.list.elem.ref as Struct).name».fromJsonObj(o)
 						«ELSEIF isMap(list.list.elem) || isList(list.list.elem)»
@@ -284,7 +310,6 @@ public class JsonStructSerializer {
 				JSONObject jo = (JSONObject) obj;
 				for(Object e : jo.keySet()) {
 					map.put(
-«««					(«map.map.key.toJavaObjectType»)
 					«IF isStruct(map.map.key)»
 						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.key.ref as Struct).fullname».class)
 					«ELSEIF isInterface(map.map.key)»
@@ -292,12 +317,11 @@ public class JsonStructSerializer {
 					«ELSEIF isMap(map.map.key) || isList(map.map.key)»
 						«typeNameToFunc(map.map.key)»fromJsonObj(e)
 					«ELSEIF isSimple(map.map.key)»
-						«restoreSimple(map.map.key.simple, "e")»
+						«restoreSimpleFromString(map.map.key.simple, "e")»
 					«ELSEIF isEnum(map.map.key)»
 						«restoreEnum(map.map.key.ref as EnumType, "(String) e")»
 					«ENDIF»
 					,
-«««					(«map.map.value.toJavaObjectType») 
 					«IF isStruct(map.map.value)»
 						JSONStructSerializer.fromJson((String) jo.get(e), «(map.map.value.ref as Struct).fullname».class)
 					«ELSEIF isInterface(map.map.value)»

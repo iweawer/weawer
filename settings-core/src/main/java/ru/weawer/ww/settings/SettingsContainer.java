@@ -26,6 +26,7 @@ public class SettingsContainer implements SettingsClient {
 		ImmutableMap.Builder<String, Class<Setting>> builder = ImmutableMap.builder();
 		supportedSettings.forEach((Class<Setting> c) -> {
 			builder.put(c.getName(), c);
+			settings.put(c.getName(), Maps.newConcurrentMap());
 		});
 		this.supportedSettings = builder.build();
 	}
@@ -47,15 +48,13 @@ public class SettingsContainer implements SettingsClient {
 					logger.debug("updateSettings: " + s.toJson());
 				}
 				Map<String, Setting> map = this.settings.get(s.settingName());
-				if(map == null) {
-					map = Maps.newHashMap();
-					settings.put(s.settingName(), map);
-				}
 				map.put(s.sysKey(), s);
 				settingsToUpdate.add(s);
 			}
 		}
-		listeners.forEach(listener -> listener.settingsChanged(settingsToUpdate));
+		if(settingsToUpdate.size() > 0) {
+			listeners.forEach(listener -> listener.settingsChanged(settingsToUpdate));
+		}
 	}
 
 	@Override
@@ -68,5 +67,42 @@ public class SettingsContainer implements SettingsClient {
 		if(map != null) {
 			keys.forEach(k -> map.remove(k));
 		}
+		if(keys.iterator().hasNext()) {
+			listeners.forEach(listener -> listener.settingsDeleted(category, keys));
+		}
+	}
+	
+	public <T extends Setting> Map<String, T> getSettings(String category, Class<T> clazz) {
+		return (Map<String, T>) settings.get(category);
+	}
+	
+	public Map<String, Setting> getSettings(String category) {
+		return settings.get(category);
+	}
+	
+	public <T extends Setting> T getSetting(String category, String key, Class<T> clazz) {
+		return (T) settings.get(category).get(key);
+	}
+	
+	public <T extends Setting> T getSingleSetting(String category, Class<T> clazz) {
+		if(isSupported(category)) {
+			return (T) settings.get(category).get(category);
+		}
+		return null;
+	}
+	
+	public Setting getSingleSetting(String category) {
+		if(isSupported(category)) {
+			return settings.get(category).get(category);
+		}
+		return null;
+	}
+	
+	public boolean isSupported(String category) {
+		return supportedSettings.containsKey(category);
+	}
+	
+	public boolean isSupported(Class<? extends Setting> clazz) {
+		return supportedSettings.containsValue(clazz);
 	}
 }

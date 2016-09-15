@@ -366,5 +366,14 @@ class WwDslValidator extends AbstractWwDslValidator {
 //			}
 //		}
 //	}
+
+	@Check
+	def public void checkKeys(Struct s) {
+		if(s.type == 'setting') {
+			if(!s.single && (s.keys == null || s.keys.size == 0)) {
+				error("Setting must have either keys or 'single'", WwDslPackage.Literals.TAGGABLE_ELEMENT__NAME)
+			}
+		}
+	}
 	
 }

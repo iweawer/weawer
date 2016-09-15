@@ -16,9 +16,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 import ru.weawer.ww.JSONStructSerializer;
 import ru.weawer.ww.sett.ChildStruct;
+import ru.weawer.ww.sett.ComplexTypes;
 import ru.weawer.ww.sett.En1;
 import ru.weawer.ww.sett.MyStr1;
 import ru.weawer.ww.sett.MyStr2;
@@ -102,6 +104,7 @@ public class TestStructSerialization {
 		
 		assertEquals(s0.lo(), s1.lo());
 		assertEquals(s0.li(), s1.li());
+		assertEquals(s0, s1);
 	}
 	
 	@Test
@@ -111,6 +114,7 @@ public class TestStructSerialization {
 		
 		assertEquals(s0.lo(), s1.lo());
 		assertEquals(s0.li(), s1.li());
+		assertEquals(s0, s1);
 	}
 	
 	@Test
@@ -120,6 +124,7 @@ public class TestStructSerialization {
 		
 		assertEquals(s0.s(), s1.s());
 		assertEquals(s0.s1(), s1.s1());
+		assertEquals(s0, s1);
 	}
 	
 	@Test
@@ -129,6 +134,22 @@ public class TestStructSerialization {
 		
 		assertEquals(s0.s(), s1.s());
 		assertEquals(s0.s1(), s1.s1());
+		assertEquals(s0, s1);
+	}
+	
+	@Test
+	public void testComplexTypesJson() {
+		ComplexTypes t0 = getComplexTypes();
+		ComplexTypes t1 = (ComplexTypes) JSONStructSerializer.fromJson(t0.toJson());
+		assertEquals(t0, t1);
+	}
+	
+	@Test
+	public void testComplexTypesBinary() {
+		ComplexTypes t0 = getComplexTypes();
+		ComplexTypes t1 = ComplexTypes.fromByteBuf(ByteBuffer.wrap(t0.toByteArray()));
+		
+		assertEquals(t0, t1);
 	}
 	
 	@Test
@@ -200,5 +221,18 @@ public class TestStructSerialization {
 	
 	private MyStr2 getMyStr2() {
 		return MyStr2.builder().s("id").s1(getMyStr1()).build();
+	}
+	
+	private ComplexTypes getComplexTypes() {
+		List<String> listString = Lists.newArrayList("sta", "asdefih234");
+		ComplexTypes t = ComplexTypes.builder()
+			.listString(listString)
+			.listIntString(ImmutableMap.of(1, "a", 2, "b"))
+			.m(ImmutableMap.of()) //1.1, Lists.newArrayList(En1.ONE, En1.ONE), 8d, Lists.newArrayList(En1.TWO))) 
+			.s1(getMyStr1())
+			.s2(getMyStr2())
+			.build();
+		return t;
+		
 	}
 }

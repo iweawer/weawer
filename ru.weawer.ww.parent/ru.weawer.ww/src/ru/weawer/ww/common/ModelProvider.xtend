@@ -14,6 +14,8 @@ import ru.weawer.ww.wwDsl.Struct
 import ru.weawer.ww.wwDsl.TaggableElement
 import com.google.common.collect.Sets
 
+import static extension ru.weawer.ww.common.Util.*
+
 public class ModelProvider {
 
 	private static final ModelProvider modelProvider = new ModelProvider();
@@ -88,5 +90,13 @@ public class ModelProvider {
 	
 	def public boolean hasAllTags(TaggableElement t, Set<String> tags) {
 		return Sets.intersection(t.tags.map[tag.name].toSet, tags).size == tags.size
+	}
+	
+	def public static <T> Set<Class<T>> toClasses(Set<Struct> structs) {
+		val Set<Class<T>> classes = Sets::newHashSet()
+		for(s : structs) {
+			classes.add(Class.forName(s.fullname) as Class<T>)
+		}
+		return classes
 	}
 }

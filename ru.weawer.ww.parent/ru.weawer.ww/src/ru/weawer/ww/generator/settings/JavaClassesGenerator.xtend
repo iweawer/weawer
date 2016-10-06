@@ -76,8 +76,9 @@ public class JavaClassesGenerator {
 				
 				private int hashcode;
 				
+				private final String sysKey;
+				
 				«IF struct.type == "setting"»
-					private final String sysKey;
 					private long updateTS;
 					
 					public long updateTS() {
@@ -90,15 +91,11 @@ public class JavaClassesGenerator {
 				«ENDIF»
 				«IF struct.single»
 					private «struct.name»() {
-						«IF struct.type == "setting"»
-							sysKey = "«struct.fullname»";
-						«ENDIF»
+						sysKey = "«struct.fullname»";
 					}
 				«ELSEIF struct.keys == null || struct.keys.size == 0»
 					private «struct.name»() {
-						«IF struct.type == "setting"»
-							sysKey = null;
-						«ENDIF»
+						sysKey = null;
 					}
 				«ELSE»
 					private «struct.name»(«struct.keys.map[type.toJavaType + " " + name].join(", ")») {
@@ -144,11 +141,6 @@ public class JavaClassesGenerator {
 					public String settingName() {
 						return "«struct.fullname»";
 					}
-					
-					@Override
-					public String sysKey() {
-						return sysKey;
-					}
 
 					@SuppressWarnings("unchecked")
 					public «struct.name» update(«struct.name» s, boolean checkKey, boolean updateKey) {
@@ -169,6 +161,10 @@ public class JavaClassesGenerator {
 						return b.build();
 					}
 				«ENDIF»
+
+				public String sysKey() {
+					return sysKey;
+				}
 
 				private void calculateHashCode() {
 					int hashCode = 0;

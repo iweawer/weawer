@@ -424,15 +424,15 @@ public class BinaryParsersGenerator {
 	
 	def private void putFunctionFor(EnumType e, HashMap<String, String> f) {
 		var func = '''
-		public static void write«e.longname»(ByteBuffer buf, «e.name» d) {
+		public static void write«e.longname»(ByteBuffer buf, «e.fullname» d) {
 			writeint(buf, d.val());
 		}
 		
-		public static «e.name» read«e.longname»(ByteBuffer buf) {
-			return «e.name».fromVal(readint(buf));
+		public static «e.fullname» read«e.longname»(ByteBuffer buf) {
+			return «e.fullname».fromVal(readint(buf));
 		}
 		
-		public static void addsize_«e.longname»(AtomicInteger size, «e.name» d) {
+		public static void addsize_«e.longname»(AtomicInteger size, «e.fullname» d) {
 			size.addAndGet(4);
 		}
 		'''

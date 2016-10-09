@@ -1,0 +1,92 @@
+ext {
+    junitVersion           = "4.12"
+    hamcrestVersion        = "1.3"
+    log4jVersion           = '2.6.2'
+    logbackClassicVersion  = '1.1.7'
+	slf4jApiVersion        = '1.7.21'
+	jsonSimpleVersion      = '1.1.1'
+	guavaVersion		   = '19.0'
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+
+    }
+}
+
+configure(allprojects) { project ->
+    group 'ru.weawer.ww'
+    version '1.0-SNAPSHOT'
+
+    apply plugin: 'java'
+	apply plugin: 'maven'
+
+    compileJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        options.encoding = 'UTF-8'
+    }
+
+    compileTestJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+        options.encoding = 'UTF-8'
+    }
+
+    repositories {
+        mavenCentral()
+        
+        maven {
+	     	credentials {
+	            username "${nexusUsername}"
+	            password "${nexusPassword}"
+	        }
+	        url "${nexusUrl}/repository/maven-public/"
+	        
+	    }
+    }
+
+    dependencies {
+        compile ('ru.weawer.ww:ru.weawer.ww:1.0.0-SNAPSHOT') { changing = true }
+		compile "com.google.guava:guava:${guavaVersion}"
+		compile "com.googlecode.json-simple:json-simple:${jsonSimpleVersion}"
+		compile "org.slf4j:slf4j-api:${slf4jApiVersion}"
+    }
+    
+    uploadArchives {
+	    repositories {
+	        mavenDeployer {
+	        	mavenLocal()
+	        
+	            repository(url: "${nexusUrl}/repository/maven-releases/") {
+	                authentication(userName: nexusUsername, password: nexusPassword)
+	            }
+	            snapshotRepository(url: "${nexusUrl}/repository/maven-snapshots") {
+	                authentication(userName: nexusUsername, password: nexusPassword)
+	            }
+	        }
+	    }
+	}
+	
+	configurations.all {
+    	resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+	}
+}
+
+
+
+project("settings-core") {
+    description = "Settings core library"
+
+    dependencies {
+
+    }
+}
+
+project("weawer-data") {
+	description = "Data persistence"
+}

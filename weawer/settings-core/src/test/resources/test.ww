@@ -1,0 +1,83 @@
+package ru.weawer.ww.sett {
+	
+	tag TENV (* environment tag *)
+	tag TPROD [ TENV ] (* production environment *)
+	tag TDEV  [ TENV TTAG ]
+	tag TTAG
+	tag Simple
+	tag Complex
+	
+	tag Str
+	
+	enum En1 {
+		ONE 
+		TWO
+	}
+	
+	setting SimpleTypes [ TPROD TTAG Simple ] {
+		keys b i
+		field En1 en
+		field boolean b
+		field byte bt
+		field char c
+		field short s
+		field int i 
+		field long l
+		field float f
+		field double dds 
+		field string str
+		field date d
+		field time t
+		field datetime dt
+		field timestamp ts
+		field guid g
+		field bytearray ba	
+	}
+	
+	
+	
+	struct MyStr1 [Str] implements Base {
+		field long lo
+		field list<map<date, boolean>> li
+	}
+	
+	struct MyStr2 [Str] implements Base {
+		field string s
+		field MyStr1 s1
+	}
+	
+	setting ComplexTypes [ TDEV TTAG Complex ] {
+		single 
+		field list<string> listString
+		field map<int, string> listIntString
+		field map<double, list<En1>> m
+		field MyStr1 s1
+		field MyStr2 s2
+	}
+	
+	setting AnotherSetting {
+		keys id		
+		field string id
+	}
+	
+	interface ITest {
+		field MyStr1 s1
+	}
+	
+	interface Base {
+		field string b nullable
+	}
+	
+	interface Base2 {
+		field string s1
+	}
+	
+	interface Child extends Base Base2 {
+		field long s2
+	}
+	
+	struct ChildStruct implements Child {
+		field Base base
+		field long l
+	}
+}

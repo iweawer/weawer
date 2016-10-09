@@ -1,0 +1,35 @@
+sourceSets {
+  main {
+    java {
+      srcDir 'src/main/java'
+      srcDir 'src-gen/java'
+    }
+    resources {
+    	srcDir 'src/main/resources'
+    }
+  }
+  test {
+    java {
+      srcDir 'src/test/java'
+      srcDir 'test-src-gen/java'
+    }
+    resources {
+    	srcDir 'src/test/resources'
+    }
+  }
+}
+
+task testGenerate(type: JavaExec) {
+	classpath = sourceSets.test.compileClasspath
+	classpath += sourceSets.test.resources
+	main = 'ru.weawer.ww.Main'
+	jvmArgs = [ 
+		'-Dlang=java', 
+		'-Dpackages=ru.weawer.ww.sett', 
+		'-DoutputDir=test-src-gen'
+	]
+}
+
+afterEvaluate {
+	testClasses.dependsOn testGenerate
+}
